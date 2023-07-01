@@ -14,6 +14,7 @@ export default {
         app.setDefaultFunctionProps({
             architecture: "arm_64",
             runtime: "nodejs18.x",
+            timeout: 900
         });
         app.stack(Stack);
     }

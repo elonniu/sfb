@@ -80,6 +80,8 @@ curl --location 'https://{ApiEndpoint}/' \
 # 4. How to compute the cost?
 
 - https://aws.amazon.com/lambda/pricing/
+- https://aws.amazon.com/step-functions/pricing/
+- https://aws.amazon.com/sns/pricing/
 
 # 5. How to get cost-effective / high performance?
 
