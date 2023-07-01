@@ -2,7 +2,6 @@ import * as console from "console";
 import axios from "axios";
 import {batchPut} from "./ddb";
 import {Table} from "sst/node/table";
-import {v4 as uuidv4} from "uuid";
 
 export async function handler(event: any) {
 
@@ -29,7 +28,7 @@ export async function handler(event: any) {
         const end = Date.now();
 
         list.push({
-            id: uuidv4().toString(),
+            id: item.Sns.MessageId,
             url,
             taskId,
             message,

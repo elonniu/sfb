@@ -1,5 +1,4 @@
 import AWS from "aws-sdk";
-import {v4 as uuidv4} from "uuid";
 
 const sns = new AWS.SNS();
 
@@ -31,15 +30,12 @@ async function snsPut(TopicArn: string, items: object[]) {
 export async function snsBatch(TopicArn: string, items: object[]) {
     let sqsMessages = [];
 
-    const taskId = uuidv4().toString();
-
     for (let i = 0; i < items.length; i++) {
 
         sqsMessages.push({
-            Id: `${taskId}-${i}`,
+            Id: `${items[i].taskId}-${i}`,
             Message: JSON.stringify({
                 ...items[i],
-                taskId
             })
         });
 

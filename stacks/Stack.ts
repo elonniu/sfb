@@ -75,9 +75,10 @@ export function Stack({stack}: StackContext) {
         ApiEndpoint: api.url,
         table: ddbUrl(table, stack),
         topic: topicUrl(topic, stack),
-        apiFunction: lambdaUrl(apiFunction, stack),
-        taskDispatchFunction: lambdaUrl(taskDispatchFunction, stack),
-        requesterFunction: lambdaUrl(requesterFunction, stack),
         stateMachine: sfUrl(stateMachine, stack),
+        taskDispatchFunction: lambdaUrl(taskDispatchFunction, stack),
+        requestDispatchFunction: lambdaUrl(taskDispatchFunction, stack),
+        requesterFunction: lambdaUrl(requesterFunction, stack),
+        apiFunction: lambdaUrl(apiFunction, stack),
     });
 }
