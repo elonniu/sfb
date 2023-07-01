@@ -4,6 +4,7 @@ import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {v4 as uuidv4} from "uuid";
 import {Task} from "./requestDispatch";
+import {HttpStatusCode} from "axios";
 
 const sf = new AWS.StepFunctions();
 
@@ -33,6 +34,15 @@ export const handler = ApiHandler(async (_evt) => {
     // qps must be greater than 0 and be integer
     if (task.qps !== undefined && (task.qps <= 0 || !Number.isInteger(task.qps))) {
         return jsonResponse({msg: "qps must be greater than 0 and be integer"}, 400);
+    }
+
+    // timeout must be greater than 0 and be integer
+    if (task.timeout <= 0 || !Number.isInteger(task.timeout)) {
+        return jsonResponse({msg: "timeout must be greater than 0 and be integer"}, 400);
+    }
+
+    if (!Object.values(HttpStatusCode).includes(task.successCode)) {
+        return jsonResponse({msg: `successCode must be in [${Object.values(HttpStatusCode).join(',')}]`}, 400);
     }
 
     // the startTime and endTime must be time string and greater than now
@@ -78,13 +88,14 @@ export const handler = ApiHandler(async (_evt) => {
             },
         }),
     };
-    await sf.startExecution(params).promise();
+    const state = await sf.startExecution(params).promise();
     const end = Date.now();
 
     return jsonResponse({
         taskId,
         latency: Number(end.toString()) - Number(start.toString()),
         payload: {...task},
+        state,
     });
 
 });

@@ -1,6 +1,7 @@
 import {snsBatch} from "./sns";
 import {Topic} from "sst/node/topic";
 import console from "console";
+import {HttpStatusCode} from "axios";
 
 export interface Task {
     shouldEnd: boolean;
@@ -9,6 +10,7 @@ export interface Task {
     batch?: number;
     qps?: number;
     timeout: number;
+    successCode: HttpStatusCode;
     startTime: string;
     endTime: string;
 }
@@ -56,6 +58,6 @@ export async function handler(event: any) {
 function delay() {
     // get the milliseconds until the next second.
     const ms = 1000 - new Date().getMilliseconds();
-    console.log(`delay ${ms} milliseconds until the next second`);
+    console.log(`waiting for start, delay ${ms} milliseconds until the next second`);
     return new Promise(resolve => setTimeout(resolve, ms));
 }
