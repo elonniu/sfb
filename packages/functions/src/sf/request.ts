@@ -7,9 +7,8 @@ import {v4 as uuidv4} from "uuid";
 
 export async function handler(event: any) {
 
-    const task: Task = event.Payload;
-
-    console.log(task);
+    const {ExecutionId, input} = event;
+    const task: Task = input.value;
 
     // now between startTime and endTime
     const now = new Date().getTime();

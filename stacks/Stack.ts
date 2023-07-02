@@ -1,7 +1,8 @@
-import {Api, Function, StackContext, Table, Topic} from "sst/constructs";
+import {Api, EventBus, Function, StackContext, Table, Topic} from "sst/constructs";
 import {ddbUrl, lambdaUrl, sfUrl, topicUrl} from "sst-helper";
-import {Choice, Condition, Pass, StateMachine} from 'aws-cdk-lib/aws-stepfunctions';
+import {Choice, Condition, JsonPath, Pass, StateMachine, TaskInput} from 'aws-cdk-lib/aws-stepfunctions';
 import {LambdaInvoke} from 'aws-cdk-lib/aws-stepfunctions-tasks';
+import * as events from "aws-cdk-lib/aws-events";
 
 export function Stack({stack}: StackContext) {
 
@@ -38,6 +39,11 @@ export function Stack({stack}: StackContext) {
 
     const lambdaTask = new LambdaInvoke(stack, 'Invoke Dispatch Lambda', {
         lambdaFunction: requestDispatchFunction,
+        payload: TaskInput.fromObject({
+            ExecutionId: JsonPath.stringAt('$$.Execution.Id'),
+            input: TaskInput.fromJsonPathAt('$.Payload'),
+        }),
+        resultPath: '$',
     });
 
     const checkDispatchShouldEnd = new Choice(stack, 'Check Dispatch Should End')
@@ -70,6 +76,11 @@ export function Stack({stack}: StackContext) {
 
     const requestLambdaTask = new LambdaInvoke(stack, 'Invoke Request Lambda', {
         lambdaFunction: sfRequestFunction,
+        payload: TaskInput.fromObject({
+            ExecutionId: JsonPath.stringAt('$$.Execution.Id'),
+            input: TaskInput.fromJsonPathAt('$.Payload'),
+        }),
+        resultPath: '$',
     });
 
     const checkRequestShouldEnd = new Choice(stack, 'Check Request Should End')
@@ -97,7 +108,6 @@ export function Stack({stack}: StackContext) {
     const taskListFunction = new Function(stack, "taskListFunction", {
         handler: "packages/functions/src/tasks/list.handler",
         memorySize: 2048,
-        permissions: ['states:DescribeExecution'],
         bind: [taskTable]
     });
 
@@ -113,6 +123,28 @@ export function Stack({stack}: StackContext) {
         memorySize: 2048,
         permissions: ['states:StopExecution'],
         bind: [taskTable]
+    });
+
+    const sfStatusChangeLambda = new Function(stack, "lambda", {
+        handler: "packages/functions/src/eda/sfStatus.handler",
+        bind: [taskTable]
+    });
+
+    new EventBus(stack, "Bus", {
+        cdk: {
+            eventBus: events.EventBus.fromEventBusName(stack, "ImportedBus", "default"),
+        },
+        rules: {
+            myRule: {
+                pattern: {
+                    source: ["aws.states"],
+                    detailType: ["Step Functions Execution Status Change"]
+                },
+                targets: {
+                    myTarget1: sfStatusChangeLambda,
+                },
+            },
+        },
     });
 
     requesterFunction.bind([logsTable, topic]);

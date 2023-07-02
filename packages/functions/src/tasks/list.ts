@@ -20,23 +20,6 @@ export const handler = ApiHandler(async (_evt) => {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-    // get step functions Execution status
-    for (let item of data.Items || []) {
-
-        if (item.states) {
-            for (let state of item.states) {
-                if (state.executionArn) {
-                    const execution = await sf.describeExecution({
-                        executionArn: state.executionArn
-                    }).promise();
-                    state.status = execution.status;
-                    state.executionUrl = executionUrl(state.executionArn, aws_region);
-                }
-            }
-        }
-
-    }
-
     return jsonResponse({
         ...data
     });

@@ -1,5 +1,5 @@
 import {ApiHandler} from "sst/node/api";
-import {jsonResponse} from "sst-helper";
+import {executionUrl, jsonResponse} from "sst-helper";
 import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {v4 as uuidv4} from "uuid";
@@ -158,6 +158,10 @@ export const handler = ApiHandler(async (_evt) => {
             createdAt: new Date().toISOString(),
         },
     } as AWS.DynamoDB.DocumentClient.PutItemInput).promise();
+
+    task.states.forEach((state) => {
+        state.executionUrl = executionUrl(state.executionArn, process.env.AWS_REGION || "");
+    });
 
     return jsonResponse({
         latency: Number(end.toString()) - Number(start.toString()),

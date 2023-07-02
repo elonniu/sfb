@@ -1,13 +1,11 @@
 import {snsBatch} from "../lib/sns";
 import {Topic} from "sst/node/topic";
-import console from "console";
-import {delay} from "../common";
+import {delay, Task} from "../common";
 
 export async function handler(event: any) {
 
-    const task: Task = event.Payload;
-
-    console.log(task);
+    const {ExecutionId, input} = event;
+    const task: Task = input.value;
 
     // now between startTime and endTime
     const now = new Date().getTime();

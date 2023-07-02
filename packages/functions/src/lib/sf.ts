@@ -1,11 +1,13 @@
 import AWS from "aws-sdk";
-import {StartExecutionInput, StartExecutionOutput} from "aws-sdk/clients/stepfunctions";
+import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
+import {Execution} from "../common";
 
 const stepFunctions = new AWS.StepFunctions();
 
 export async function startExecutionBatch(items: StartExecutionInput[]) {
 
-    let list: StartExecutionOutput[] = [];
+    let list: Execution[] = [];
+
     const batchWriteParallel = async (items: StartExecutionInput[]) => {
         const promises = [];
         for (let i = 0; i < items.length; i++) {
@@ -23,7 +25,13 @@ export async function startExecutionBatch(items: StartExecutionInput[]) {
 
     await batchWriteParallel(items)
         .then((data) => {
-            list = data;
+            data.forEach((item, index) => {
+                list.push({
+                    executionArn: item.executionArn,
+                    status: "WAITING",
+                    startDate: item.startDate.toISOString() || new Date().toISOString()
+                });
+            });
             // console.log('batchWriteParallel succeed: ', data);
         })
         .catch((error) => {

@@ -1,5 +1,11 @@
 import {HttpStatusCode} from "axios";
-import {StartExecutionOutput} from "aws-sdk/clients/stepfunctions";
+import {Arn} from "aws-sdk/clients/stepfunctions";
+
+export interface Execution {
+    executionArn: Arn;
+    startDate: string;
+    status?: string;
+}
 
 export interface Task {
     shouldEnd: boolean;
@@ -20,7 +26,7 @@ export interface Task {
     startTime: string;
     createdAt: string;
     endTime: string;
-    states?: StartExecutionOutput[];
+    states?: Execution[];
 }
 
 
