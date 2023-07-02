@@ -14,7 +14,7 @@ export async function handler(event: any) {
     // now between startTime and endTime
     const now = new Date().getTime();
     if (now < new Date(task.startTime).getTime()) {
-        await delay(startSeconds);
+        await delay(ExecutionId, startSeconds);
         return {...task, shouldEnd: false};
     }
 
@@ -47,7 +47,7 @@ export async function requestBatch(task: Task, batch: number = 1) {
             const {data, status} = await axios.get(task.url, {timeout: task.timeout});
             dataLength = data.toString().length;
             success = status === task.successCode;
-        } catch (e) {
+        } catch (e: any) {
             message = e.message;
             console.error(e.message);
         }

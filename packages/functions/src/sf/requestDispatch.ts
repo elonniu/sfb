@@ -11,7 +11,7 @@ export async function handler(event: any) {
     // now between startTime and endTime
     const now = new Date().getTime();
     if (now < new Date(task.startTime).getTime()) {
-        await delay(startSeconds);
+        await delay(ExecutionId, startSeconds);
         return {...task, shouldEnd: false};
     }
 
@@ -24,7 +24,7 @@ export async function handler(event: any) {
         for (let i = 0; i < task.n; i++) {
             list.push({...task});
         }
-        await sendToSns(list);
+        await sendToSns(ExecutionId, list);
         return {shouldEnd: true};
     }
 
@@ -33,17 +33,17 @@ export async function handler(event: any) {
         for (let i = 0; i < task.qps; i++) {
             list.push({...task});
         }
-        await sendToSns(list);
-        await delay(startSeconds);
+        await sendToSns(ExecutionId, list);
+        await delay(ExecutionId, startSeconds);
         return {...task, shouldEnd: false};
     }
 
     return {shouldEnd: true};
 }
 
-export async function sendToSns(tasks: Task[]) {
+export async function sendToSns(ExecutionId: string, tasks: Task[]) {
     const start = new Date().toISOString();
     await snsBatch(Topic.Topic.topicArn, tasks);
     const end = new Date().toISOString();
-    console.log(`SnsBatch ${tasks.length} messages latency: ${new Date(end).getTime() - new Date(start).getTime()} ms`);
+    console.log(`ExecutionId ${ExecutionId} SnsBatch ${tasks.length} messages latency: ${new Date(end).getTime() - new Date(start).getTime()} ms`);
 }
