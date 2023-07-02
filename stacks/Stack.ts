@@ -125,6 +125,12 @@ export function Stack({stack}: StackContext) {
         bind: [taskTable]
     });
 
+    const regionsFunction = new Function(stack, "regionsFunction", {
+        handler: "packages/functions/src/tasks/regions.handler",
+        memorySize: 2048,
+        permissions: ['cloudformation:DescribeStacks', 'ec2:describeRegions']
+    });
+
     const sfStatusChangeLambda = new Function(stack, "lambda", {
         handler: "packages/functions/src/eda/sfStatus.handler",
         bind: [taskTable]
@@ -152,6 +158,7 @@ export function Stack({stack}: StackContext) {
 
     const api = new Api(stack, "api", {
         routes: {
+            "GET /regions": regionsFunction,
             "GET /tasks": taskListFunction,
             "POST /tasks": taskCreateFunction,
             "PUT /tasks/{id}/abort": taskAbortFunction,
