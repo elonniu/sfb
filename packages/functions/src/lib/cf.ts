@@ -1,9 +1,9 @@
 import AWS from "aws-sdk";
 import {Region} from "aws-sdk/clients/ec2";
 
-const SST_STAGE = process.env.SST_STAGE || "";
-const SST_APP = process.env.SST_APP || "";
-const StackName = `${SST_STAGE}-${SST_APP}-Stack`;
+export const SST_STAGE = process.env.SST_STAGE || "";
+export const SST_APP = process.env.SST_APP || "";
+export const StackName = `${SST_STAGE}-${SST_APP}-Stack`;
 
 async function checkStackInRegion(region: Region) {
 
@@ -29,5 +29,6 @@ export async function checkStackDeployment() {
         const list = await Promise.all(promises);
         return list.filter(region => region.Deployed);
     }
-    return {};
+
+    return [];
 }

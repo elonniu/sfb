@@ -2,9 +2,9 @@ import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {Execution} from "../common";
 
-const stepFunctions = new AWS.StepFunctions();
+export async function startExecutionBatch(region: string, items: StartExecutionInput[]) {
 
-export async function startExecutionBatch(items: StartExecutionInput[]) {
+    const stepFunctions = new AWS.StepFunctions({region});
 
     let list: Execution[] = [];
 

@@ -1,5 +1,5 @@
 import {Api, EventBus, Function, StackContext, Table, Topic} from "sst/constructs";
-import {ddbUrl, lambdaUrl, sfUrl, topicUrl} from "sst-helper";
+import {ddbUrl, lambdaUrl, sfUrl, stackUrl, topicUrl} from "sst-helper";
 import {Choice, Condition, JsonPath, Pass, StateMachine, TaskInput} from 'aws-cdk-lib/aws-stepfunctions';
 import {LambdaInvoke} from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as events from "aws-cdk-lib/aws-events";
@@ -97,7 +97,7 @@ export function Stack({stack}: StackContext) {
     const taskCreateFunction = new Function(stack, "taskCreateFunction", {
         handler: "packages/functions/src/tasks/create.handler",
         memorySize: 2048,
-        permissions: ['states:StartExecution'],
+        permissions: ['states:StartExecution', 'dynamodb:PutItem'],
         bind: [taskTable],
         environment: {
             DISPATCH_SF_ARN: dispatchStateMachine.stateMachineArn,
@@ -169,6 +169,7 @@ export function Stack({stack}: StackContext) {
 
     stack.addOutputs({
         ApiEndpoint: api.url,
+        stack: stackUrl(stack.stackId, stack.region),
         taskTable: ddbUrl(taskTable.tableName, stack.region),
         logsTable: ddbUrl(logsTable.tableName, stack.region),
         ipTable: ddbUrl(ipTable.tableName, stack.region),

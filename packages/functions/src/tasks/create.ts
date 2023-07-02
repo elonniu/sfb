@@ -8,10 +8,9 @@ import {HttpStatusCode} from "axios";
 import {Table} from "sst/node/table";
 import {startExecutionBatch} from "../lib/sf";
 
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const sf = new AWS.StepFunctions();
 const dispatchStateMachineArn = process.env.DISPATCH_SF_ARN || "";
 const requestStateMachineArn = process.env.REQUEST_SF_ARN || "";
+const current_region = process.env.AWS_REGION || "";
 
 export const handler = ApiHandler(async (_evt) => {
 
@@ -118,61 +117,83 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "endTime must be less than startTime + 24 hours"}, 400);
     }
 
-    const start = Date.now();
     task.taskId = uuidv4().toString();
 
-    let sfExe: StartExecutionInput[] = [];
+    if (!task.regions) {
+        task.regions = [current_region];
+    }
 
-    if (task.n && task.c) {
-        for (let i = 0; i < task.c; i++) {
-            const taskClient = i + 1;
+    try {
+        const start = Date.now();
+        const states = await dispatchRegions(task);
+        const end = Date.now();
+
+        return jsonResponse({
+            latency: Number(end.toString()) - Number(start.toString()),
+            ...task,
+            states
+        });
+
+    } catch (e: any) {
+        return jsonResponse({msg: e.message}, 500);
+    }
+
+});
+
+export async function dispatchRegions(task: Task) {
+    let states = {};
+
+    for (const region of task.regions) {
+
+        let sfExe: StartExecutionInput[] = [];
+
+        if (task.n && task.c) {
+            for (let i = 0; i < task.c; i++) {
+                const taskClient = i + 1;
+                sfExe.push({
+                    name: "request-" + task.taskId + "-" + taskClient,
+                    stateMachineArn: requestStateMachineArn.replace(current_region, region),
+                    input: JSON.stringify({
+                        Payload: {
+                            ...task,
+                            taskClient,
+                            perStateMachineExecuted: Math.ceil(task.n / task.c),
+                            currentStateMachineExecutedLeft: Math.ceil(task.n / task.c),
+                            shouldEnd: false,
+                        },
+                    }),
+                });
+            }
+        } else {
             sfExe.push({
-                name: "request-" + task.taskId + "-" + taskClient,
-                stateMachineArn: requestStateMachineArn,
+                name: "dispatch-" + task.taskId,
+                stateMachineArn: dispatchStateMachineArn.replace(current_region, region),
                 input: JSON.stringify({
                     Payload: {
                         ...task,
-                        taskClient,
-                        perStateMachineExecuted: Math.ceil(task.n / task.c),
-                        currentStateMachineExecutedLeft: Math.ceil(task.n / task.c),
+                        taskClient: 0,
                         shouldEnd: false,
                     },
                 }),
             });
         }
-    } else {
-        sfExe.push({
-            name: "dispatch-" + task.taskId,
-            stateMachineArn: dispatchStateMachineArn,
-            input: JSON.stringify({
-                Payload: {
-                    ...task,
-                    taskClient: 0,
-                    shouldEnd: false,
-                },
-            }),
+        task.states = await startExecutionBatch(region, sfExe);
+
+        const dynamodb = new AWS.DynamoDB.DocumentClient({region});
+        await dynamodb.put({
+            TableName: Table.tasks.tableName,
+            Item: {
+                ...task,
+                createdAt: new Date().toISOString(),
+            },
+        } as AWS.DynamoDB.DocumentClient.PutItemInput).promise();
+
+        task.states.forEach((state) => {
+            state.executionUrl = executionUrl(state.executionArn, region);
         });
+
+        states[region] = task.states;
     }
 
-    task.states = await startExecutionBatch(sfExe);
-
-    const end = Date.now();
-
-    await dynamodb.put({
-        TableName: Table.tasks.tableName,
-        Item: {
-            ...task,
-            createdAt: new Date().toISOString(),
-        },
-    } as AWS.DynamoDB.DocumentClient.PutItemInput).promise();
-
-    task.states.forEach((state) => {
-        state.executionUrl = executionUrl(state.executionArn, process.env.AWS_REGION || "");
-    });
-
-    return jsonResponse({
-        latency: Number(end.toString()) - Number(start.toString()),
-        task: {...task},
-    });
-
-});
+    return states;
+}

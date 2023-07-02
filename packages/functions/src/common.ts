@@ -5,12 +5,14 @@ export interface Execution {
     executionArn: Arn;
     startDate: string;
     status?: string;
+    executionUrl?: string;
 }
 
 export interface Task {
     shouldEnd: boolean;
     report: boolean;
     taskName: string;
+    regions: string[];
     taskId: string;
     taskType: string;
     url: string;
