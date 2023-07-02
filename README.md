@@ -7,6 +7,7 @@ This is a tool for bench testing by AWS Serverless.
 ## 2. How to use it?
 
 ### 2.2 Requirements
+
 - `node -v` >= v16.16.0
 - `npm -v` >= 9.6.6
 
@@ -26,37 +27,67 @@ npm run deploy --stage <stage> --region <region>
 
 ```bash
 Deployed:
-API
+Stack
 ApiEndpoint: https://{your-api-url}
 ```
 
 ### 2.4 Test the API Gateway URL
 
-### 2.4.1 QPS
+### 2.4.1 QPS Task
 
 ```bash
-curl --location 'https://{ApiEndpoint}/' \
+curl --location 'https://{your-endpoint}/tasks' \
 --header 'Content-Type: application/json' \
 --data '{
+    "taskName": "test",
+    "taskType": "http",
+    "report": true,
     "url": "https://{your-api}",
+    "method": "GET",
     "timeout": 1000,
-    "startTime": "2023-07-01 17:00:00",
-    "endTime": "2023-07-01 17:00:00",
-    "qps": 1
+    "startTime": "2023-07-01T18:25:37.000+08:00",
+    "endTime": "2023-07-01T18:40:37.000+08:00",
+    "qps": 1,
+    "successCode": 200
 }'
 ```
 
-### 2.4.2 Batch
+### 2.4.2 Batch Task
 
 ```bash
-curl --location 'https://{ApiEndpoint}/' \
+curl --location 'https://{your-endpoint}/tasks' \
 --header 'Content-Type: application/json' \
 --data '{
+    "taskName": "test",
+    "taskType": "http",
+    "report": true,
     "url": "https://{your-api}",
+    "method": "GET",
+    "n": 5,
     "timeout": 1000,
-    "startTime": "2023-07-01 17:00:00",
-    "endTime": "2023-07-01 17:00:00",
-    "batch": 10000
+    "startTime": "2023-07-01T18:25:37.000+08:00",
+    "endTime": "2023-07-01T18:40:37.000+08:00",
+    "successCode": 200
+}'
+```
+
+### 2.4.2 Batch & Client Task
+
+```bash
+curl --location 'https://{your-endpoint}/tasks' \
+--header 'Content-Type: application/json' \
+--data '{
+    "taskName": "test",
+    "taskType": "http",
+    "report": true,
+    "url": "https://{your-api}",
+    "method": "GET",
+    "n": 1,
+    "c": 1,
+    "timeout": 1000,
+    "startTime": "2023-07-01T18:25:37.000+08:00",
+    "endTime": "2023-07-01T18:40:37.000+08:00",
+    "successCode": 200
 }'
 ```
 
