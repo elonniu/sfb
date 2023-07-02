@@ -1,30 +1,7 @@
 import {snsBatch} from "../lib/sns";
 import {Topic} from "sst/node/topic";
 import console from "console";
-import {HttpStatusCode} from "axios";
-import {StartExecutionOutput} from "aws-sdk/clients/stepfunctions";
-import {delay} from "./request";
-
-export interface Task {
-    shouldEnd: boolean;
-    report: boolean;
-    taskId: string;
-    taskType: string;
-    url: string;
-    method: string;
-    qps?: number;
-    n?: number;
-    perStateMachineExecuted?: number,
-    currentStateMachineExecutedLeft?: number,
-    c?: number;
-    taskClient?: number;
-    timeout: number;
-    successCode: HttpStatusCode;
-    startTime: string;
-    createdAt: string;
-    endTime: string;
-    states?: StartExecutionOutput[];
-}
+import {delay} from "../common";
 
 export async function handler(event: any) {
 

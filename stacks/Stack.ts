@@ -101,6 +101,20 @@ export function Stack({stack}: StackContext) {
         bind: [taskTable]
     });
 
+    const taskAbortFunction = new Function(stack, "taskAbortFunction", {
+        handler: "packages/functions/src/tasks/abort.handler",
+        memorySize: 2048,
+        permissions: ['states:StopExecution'],
+        bind: [taskTable]
+    });
+
+    const taskDeleteFunction = new Function(stack, "taskDeleteFunction", {
+        handler: "packages/functions/src/tasks/delete.handler",
+        memorySize: 2048,
+        permissions: ['states:StopExecution'],
+        bind: [taskTable]
+    });
+
     requesterFunction.bind([logsTable, topic]);
     requestDispatchFunction.bind([topic]);
 
@@ -108,6 +122,8 @@ export function Stack({stack}: StackContext) {
         routes: {
             "GET /tasks": taskListFunction,
             "POST /tasks": taskCreateFunction,
+            "PUT /tasks/{id}/abort": taskAbortFunction,
+            "DELETE /tasks/{id}": taskDeleteFunction,
             "GET /api": apiFunction,
         },
     });

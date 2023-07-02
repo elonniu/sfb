@@ -1,4 +1,4 @@
-import {Task} from "../sf/requestDispatch";
+import {Task} from "../common";
 import {requestBatch} from "../sf/request";
 
 export async function handler(event: any) {

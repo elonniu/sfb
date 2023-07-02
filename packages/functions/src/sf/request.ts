@@ -1,5 +1,5 @@
 import console from "console";
-import {Task} from "./requestDispatch";
+import {delay, Task} from "../common";
 import axios from "axios";
 import {batchPut} from "../lib/ddb";
 import {Table} from "sst/node/table";
@@ -32,12 +32,6 @@ export async function handler(event: any) {
     }
 
     return {...task, shouldEnd: false};
-}
-
-export function delay() {
-    const ms = 1000 - new Date().getMilliseconds();
-    console.log(`waiting for start, delay ${ms} milliseconds until the next second`);
-    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export async function requestBatch(task: Task, batch: number = 1) {
