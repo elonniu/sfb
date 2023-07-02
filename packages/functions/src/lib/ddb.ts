@@ -30,6 +30,10 @@ async function ddbPut(table: string, items: object[]) {
 
 export async function batchPut(table: string, items: object[]) {
 
+    if (items.length === 0) {
+        return;
+    }
+
     let list = [];
 
     for (let i = 0; i < items.length; i++) {

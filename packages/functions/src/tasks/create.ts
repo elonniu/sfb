@@ -17,12 +17,20 @@ export const handler = ApiHandler(async (_evt) => {
 
     let task: Task = JSON.parse(_evt.body || "{}");
 
+    if (task.report) {
+        task.report = true;
+    }
+
     if (!task.taskType) {
         return jsonResponse({msg: "taskType is empty"}, 400);
     }
 
     if (!task.url || !task.timeout) {
         return jsonResponse({msg: "url, timeout is empty"}, 400);
+    }
+
+    if (!task.method) {
+        return jsonResponse({msg: "method is empty"}, 400);
     }
 
     // n and qps can not be both empty
@@ -53,6 +61,10 @@ export const handler = ApiHandler(async (_evt) => {
     // qps must be greater than 0 and be integer
     if (task.qps !== undefined && (task.qps <= 0 || !Number.isInteger(task.qps))) {
         return jsonResponse({msg: "qps must be greater than 0 and be integer"}, 400);
+    }
+
+    if (task.timeout === undefined) {
+        task.timeout = 1000;
     }
 
     // timeout must be greater than 0 and be integer

@@ -50,7 +50,7 @@ export async function requestBatch(task: Task, batch: number = 1) {
 
         const start = Date.now();
         try {
-            const {data, status} = await axios.get(task.url, {timeout: task.timeout ? task.timeout : 1000});
+            const {data, status} = await axios.get(task.url, {timeout: task.timeout});
             dataLength = data.toString().length;
             success = status === task.successCode;
         } catch (e) {
@@ -59,17 +59,19 @@ export async function requestBatch(task: Task, batch: number = 1) {
         }
         const end = Date.now();
 
-        list.push({
-            id: uuidv4().toString(),
-            taskId: task.taskId,
-            taskClient: task.taskClient,
-            url: task.url,
-            dataLength,
-            success,
-            message,
-            latency: Number(end.toString()) - Number(start.toString()),
-            time: new Date().toISOString()
-        });
+        if (task.report) {
+            list.push({
+                id: uuidv4().toString(),
+                taskId: task.taskId,
+                taskClient: task.taskClient,
+                url: task.url,
+                dataLength,
+                success,
+                message,
+                latency: Number(end.toString()) - Number(start.toString()),
+                time: new Date().toISOString()
+            });
+        }
     }
 
     await batchPut(Table.logs.tableName, list);

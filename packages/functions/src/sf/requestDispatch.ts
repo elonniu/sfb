@@ -2,14 +2,16 @@ import {snsBatch} from "../lib/sns";
 import {Topic} from "sst/node/topic";
 import console from "console";
 import {HttpStatusCode} from "axios";
-import {Arn, StartExecutionOutput, Timestamp} from "aws-sdk/clients/stepfunctions";
+import {StartExecutionOutput} from "aws-sdk/clients/stepfunctions";
 import {delay} from "./request";
 
 export interface Task {
     shouldEnd: boolean;
+    report: boolean;
     taskId: string;
     taskType: string;
     url: string;
+    method: string;
     qps?: number;
     n?: number;
     perStateMachineExecuted?: number,
