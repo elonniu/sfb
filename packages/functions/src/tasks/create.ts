@@ -7,6 +7,7 @@ import {Task} from "../common";
 import {HttpStatusCode} from "axios";
 import {Table} from "sst/node/table";
 import {startExecutionBatch} from "../lib/sf";
+import {checkStackDeployment} from "../lib/cf";
 
 const dispatchStateMachineArn = process.env.DISPATCH_SF_ARN || "";
 const requestStateMachineArn = process.env.REQUEST_SF_ARN || "";
@@ -121,6 +122,13 @@ export const handler = ApiHandler(async (_evt) => {
 
     if (!task.regions) {
         task.regions = [current_region];
+    } else {
+        const deployRegions = await checkStackDeployment(task.regions);
+        // list task.regions are not in deployRegions
+        const notDeployRegions = task.regions.filter((region) => !deployRegions.includes(region));
+        if (notDeployRegions.length > 0) {
+            return jsonResponse({msg: `regions [${notDeployRegions.join(', ')}] are not deployed`}, 400);
+        }
     }
 
     try {
@@ -131,7 +139,7 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({
             latency: Number(end.toString()) - Number(start.toString()),
             ...task,
-            states
+            states,
         });
 
     } catch (e: any) {

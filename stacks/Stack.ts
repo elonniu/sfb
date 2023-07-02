@@ -94,9 +94,16 @@ export function Stack({stack}: StackContext) {
         stateMachineName: `${stack.stackName}-RequestStateMachine`,
     });
 
+    const taskGetFunction = new Function(stack, "taskGetFunction", {
+        handler: "packages/functions/src/tasks/get.handler",
+        permissions: ['dynamodb:GetItem'],
+        memorySize: 2048,
+        bind: [taskTable],
+    });
+
     const taskCreateFunction = new Function(stack, "taskCreateFunction", {
         handler: "packages/functions/src/tasks/create.handler",
-        permissions: ['states:StartExecution', 'dynamodb:PutItem'],
+        permissions: ['states:StartExecution', 'dynamodb:PutItem', 'ec2:describeRegions', 'cloudformation:DescribeStacks'],
         memorySize: 2048,
         bind: [taskTable],
         environment: {
@@ -162,8 +169,9 @@ export function Stack({stack}: StackContext) {
             "GET /regions": regionsFunction,
             "GET /tasks": taskListFunction,
             "POST /tasks": taskCreateFunction,
-            "PUT /tasks/{id}/abort": taskAbortFunction,
+            "GET /tasks/{id}": taskGetFunction,
             "DELETE /tasks/{id}": taskDeleteFunction,
+            "PUT /tasks/{id}/abort": taskAbortFunction,
             "GET /api": apiFunction,
         },
     });

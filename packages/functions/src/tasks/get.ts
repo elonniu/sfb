@@ -2,8 +2,7 @@ import {ApiHandler} from "sst/node/api";
 import {jsonResponse} from "sst-helper";
 import AWS from "aws-sdk";
 import {Table} from "sst/node/table";
-import {batchDelete, batchGet} from "../lib/ddb";
-import {batchStop} from "../lib/sf";
+import {batchGet} from "../lib/ddb";
 
 const TableName = Table.tasks.tableName;
 const current_region = process.env.AWS_REGION || "";
@@ -33,30 +32,13 @@ export const handler = ApiHandler(async (_evt) => {
             ? await batchGet(TableName, {taskId}, task.regions)
             : [task];
 
-        // delete global tasks
-        if (globalTasks.length > 0) {
-            let listStop = [];
-            for (let current of globalTasks) {
-                if (current && current.states) {
-                    for (let state of current.states) {
-                        listStop.push({
-                            region: current.region,
-                            executionArn: state.executionArn
-                        });
-                    }
-                }
-            }
-            await batchStop(listStop);
-            await batchDelete(TableName, {taskId}, task.regions);
-        }
-
         return jsonResponse({
-            message: "task deleted",
+            message: "task aborted",
             task: globalTasks
         });
     } catch (e: any) {
         return jsonResponse({
-            message: "task deleted",
+            message: "task aborted",
             error: e.message
         });
     }
