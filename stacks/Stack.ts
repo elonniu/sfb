@@ -19,8 +19,16 @@ export function Stack({stack}: StackContext) {
         primaryIndex: {partitionKey: "id"},
     });
 
+    const ipTable = new Table(stack, "ip", {
+        fields: {
+            ip: "string",
+        },
+        primaryIndex: {partitionKey: "ip"},
+    });
+
     const apiFunction = new Function(stack, "apiFunction", {
-        handler: "packages/functions/src/api.handler",
+        handler: "packages/functions/src/test/api.handler",
+        bind: [logsTable, ipTable]
     });
 
     const requestDispatchFunction = new Function(stack, "requestDispatchFunction", {
@@ -28,21 +36,18 @@ export function Stack({stack}: StackContext) {
         memorySize: 9999,
     });
 
-    const lambdaTask = new LambdaInvoke(stack, 'InvokeLambda', {
+    const lambdaTask = new LambdaInvoke(stack, 'Invoke Dispatch Lambda', {
         lambdaFunction: requestDispatchFunction,
     });
 
-    // 创建选择状态，根据 Lambda 函数的返回值决定是否结束状态机
-    const checkShouldEnd = new Choice(stack, 'Check Should End')
-        .when(Condition.booleanEquals('$.Payload.shouldEnd', true), new Pass(stack, 'End State'))
+    const checkDispatchShouldEnd = new Choice(stack, 'Check Dispatch Should End')
+        .when(Condition.booleanEquals('$.Payload.shouldEnd', true), new Pass(stack, 'End Dispatch State'))
         .otherwise(lambdaTask);
 
-    // 将调用 Lambda 函数的任务连接到选择状态
-    lambdaTask.next(checkShouldEnd);
+    lambdaTask.next(checkDispatchShouldEnd);
 
-    // 定义状态机的初始状态为 Lambda 任务
-    const stateMachine = new StateMachine(stack, 'StateMachine', {
-        definition: checkShouldEnd,
+    const dispatchStateMachine = new StateMachine(stack, 'StateMachine', {
+        definition: checkDispatchShouldEnd,
         stateMachineName: `${stack.stackName}-StateMachine`,
     });
 
@@ -57,13 +62,34 @@ export function Stack({stack}: StackContext) {
         },
     });
 
+    const sfRequestFunction = new Function(stack, "SfRequestFunction", {
+        handler: "packages/functions/src/sf/request.handler",
+        memorySize: 4048,
+        bind: [logsTable]
+    });
+
+    const requestLambdaTask = new LambdaInvoke(stack, 'Invoke Request Lambda', {
+        lambdaFunction: sfRequestFunction,
+    });
+
+    const checkRequestShouldEnd = new Choice(stack, 'Check Request Should End')
+        .when(Condition.booleanEquals('$.Payload.shouldEnd', true), new Pass(stack, 'End Request State'))
+        .otherwise(requestLambdaTask);
+
+    requestLambdaTask.next(checkRequestShouldEnd);
+
+    const requestStateMachine = new StateMachine(stack, 'RequestStateMachine', {
+        definition: checkRequestShouldEnd,
+    });
+
     const taskCreateFunction = new Function(stack, "taskCreateFunction", {
         handler: "packages/functions/src/tasks/create.handler",
         memorySize: 2048,
         permissions: ['states:StartExecution'],
         bind: [taskTable],
         environment: {
-            SF: stateMachine.stateMachineArn,
+            DISPATCH_SF_ARN: dispatchStateMachine.stateMachineArn,
+            REQUEST_SF_ARN: requestStateMachine.stateMachineArn,
         }
     });
 
@@ -71,13 +97,9 @@ export function Stack({stack}: StackContext) {
         handler: "packages/functions/src/tasks/list.handler",
         memorySize: 2048,
         permissions: ['states:DescribeExecution'],
-        bind: [taskTable],
-        environment: {
-            SF: stateMachine.stateMachineArn,
-        }
+        bind: [taskTable]
     });
 
-    apiFunction.bind([logsTable]);
     requesterFunction.bind([logsTable, topic]);
     requestDispatchFunction.bind([topic]);
 
@@ -93,11 +115,16 @@ export function Stack({stack}: StackContext) {
         ApiEndpoint: api.url,
         taskTable: ddbUrl(taskTable.tableName, stack.region),
         logsTable: ddbUrl(logsTable.tableName, stack.region),
+        ipTable: ddbUrl(ipTable.tableName, stack.region),
         topic: topicUrl(topic.topicArn, stack.region),
-        stateMachine: sfUrl(stateMachine.stateMachineArn, stack.region),
+        stateMachine: sfUrl(dispatchStateMachine.stateMachineArn, stack.region),
         taskCreateFunction: lambdaUrl(taskCreateFunction.functionName, stack.region),
         requestDispatchFunction: lambdaUrl(requestDispatchFunction.functionName, stack.region),
         requesterFunction: lambdaUrl(requesterFunction.functionName, stack.region),
         apiFunction: lambdaUrl(apiFunction.functionName, stack.region),
+        RequestStateMachine: sfUrl(requestStateMachine.stateMachineArn, stack.region),
+        SfRequestFunction: lambdaUrl(sfRequestFunction.functionName, stack.region),
     });
+
+    return {logsTable};
 }

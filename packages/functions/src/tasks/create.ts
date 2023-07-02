@@ -9,7 +9,8 @@ import {Table} from "sst/node/table";
 
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const sf = new AWS.StepFunctions();
-const stateMachineArn= process.env.SF || "";
+const dispatchStateMachineArn = process.env.DISPATCH_SF_ARN || "";
+const requestStateMachineArn = process.env.REQUEST_SF_ARN || "";
 
 export const handler = ApiHandler(async (_evt) => {
 
@@ -20,22 +21,32 @@ export const handler = ApiHandler(async (_evt) => {
     }
 
     if (!task.url || !task.timeout) {
-        return jsonResponse({msg: "url, batch, timeout is empty"}, 400);
+        return jsonResponse({msg: "url, timeout is empty"}, 400);
     }
 
-    // batch and qps can not be both empty
-    if (task.batch === undefined && task.qps === undefined) {
-        return jsonResponse({msg: "batch and qps can not be both empty"}, 400);
+    // n and qps can not be both empty
+    if (task.n === undefined && task.qps === undefined) {
+        return jsonResponse({msg: "n and qps can not be both empty"}, 400);
     }
 
-    // batch and qps can not be both set
-    if (task.batch !== undefined && task.qps !== undefined) {
-        return jsonResponse({msg: "batch and qps can not be both set"}, 400);
+    // n and qps can not be both set
+    if (task.n !== undefined && task.qps !== undefined) {
+        return jsonResponse({msg: "n and qps can not be both set"}, 400);
     }
 
-    // batch must be greater than 0 and be integer
-    if (task.batch !== undefined && (task.batch <= 0 || !Number.isInteger(task.batch))) {
-        return jsonResponse({msg: "batch must be greater than 0 and be integer"}, 400);
+    // n must be greater than 0 and be integer
+    if (task.n !== undefined && (task.n <= 0 || !Number.isInteger(task.n))) {
+        return jsonResponse({msg: "n must be greater than 0 and be integer"}, 400);
+    }
+
+    // c must be greater than 0 and be integer
+    if (task.c !== undefined && (task.c <= 0 || !Number.isInteger(task.c))) {
+        return jsonResponse({msg: "c must be greater than 0 and be integer"}, 400);
+    }
+
+    // c must be less than n
+    if (task.c !== undefined && task.n !== undefined && task.c > task.n) {
+        return jsonResponse({msg: "c must be less than n"}, 400);
     }
 
     // qps must be greater than 0 and be integer
@@ -85,21 +96,38 @@ export const handler = ApiHandler(async (_evt) => {
 
     const start = Date.now();
     task.taskId = uuidv4().toString();
-    const params: StartExecutionInput = {
-        stateMachineArn,
-        input: JSON.stringify({
-            Payload: {
-                ...task,
-                shouldEnd: false,
-            },
-        }),
-    };
-    const state = await sf.startExecution(params).promise();
-    const end = Date.now();
+    task.states = [];
 
-    task.executionArn = state.executionArn;
-    task.startDate = state.startDate;
-    task.createdAt = new Date().toISOString();
+    if (task.n && task.c) {
+        task.left = Math.ceil(task.n / task.c);
+        for (let i = 0; i < task.c; i++) {
+            task.client = i;
+            const params: StartExecutionInput = {
+                stateMachineArn: requestStateMachineArn,
+                input: JSON.stringify({
+                    Payload: {
+                        ...task,
+                        shouldEnd: false,
+                    },
+                }),
+            };
+            task.states.push(await sf.startExecution(params).promise());
+        }
+    } else {
+        task.left = task.n;
+        const params: StartExecutionInput = {
+            stateMachineArn: dispatchStateMachineArn,
+            input: JSON.stringify({
+                Payload: {
+                    ...task,
+                    shouldEnd: false,
+                },
+            }),
+        };
+        task.states.push(await sf.startExecution(params).promise());
+    }
+
+    const end = Date.now();
 
     await dynamodb.put({
         TableName: Table.tasks.tableName,

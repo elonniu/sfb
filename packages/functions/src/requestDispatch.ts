@@ -1,16 +1,19 @@
-import {snsBatch} from "./sns";
+import {snsBatch} from "./lib/sns";
 import {Topic} from "sst/node/topic";
 import console from "console";
 import {HttpStatusCode} from "axios";
-import {Arn, Timestamp} from "aws-sdk/clients/stepfunctions";
+import {Arn, StartExecutionOutput, Timestamp} from "aws-sdk/clients/stepfunctions";
 
 export interface Task {
     shouldEnd: boolean;
     taskId: string;
     taskType: string;
     url: string;
-    batch?: number;
     qps?: number;
+    n?: number;
+    left?: number;
+    c?: number;
+    client?: number;
     timeout: number;
     successCode: HttpStatusCode;
     startTime: string;
@@ -18,6 +21,7 @@ export interface Task {
     endTime: string;
     executionArn?: Arn;
     startDate?: Timestamp;
+    states: StartExecutionOutput[];
 }
 
 export async function handler(event: any) {
@@ -37,9 +41,9 @@ export async function handler(event: any) {
         return {shouldEnd: true};
     }
 
-    if (task.batch) {
+    if (task.n) {
         let sqsMessages = [];
-        for (let i = 0; i < task.batch; i++) {
+        for (let i = 0; i < task.n; i++) {
             sqsMessages.push({...task});
         }
         await snsBatch(Topic.Topic.topicArn, sqsMessages);

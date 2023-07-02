@@ -1,6 +1,6 @@
 import * as console from "console";
 import axios from "axios";
-import {batchPut} from "./ddb";
+import {batchPut} from "./lib/ddb";
 import {Table} from "sst/node/table";
 import {Task} from "./requestDispatch";
 
