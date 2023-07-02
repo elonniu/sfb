@@ -41,7 +41,7 @@ export async function handler(event: any) {
         });
     }
 
-    await batchPut(Table.table.tableName, list);
+    await batchPut(Table.logs.tableName, list);
 
     return {};
 

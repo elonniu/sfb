@@ -2,17 +2,22 @@ import {snsBatch} from "./sns";
 import {Topic} from "sst/node/topic";
 import console from "console";
 import {HttpStatusCode} from "axios";
+import {Arn, Timestamp} from "aws-sdk/clients/stepfunctions";
 
 export interface Task {
     shouldEnd: boolean;
     taskId: string;
+    taskType: string;
     url: string;
     batch?: number;
     qps?: number;
     timeout: number;
     successCode: HttpStatusCode;
     startTime: string;
+    createdAt: string;
     endTime: string;
+    executionArn?: Arn;
+    startDate?: Timestamp;
 }
 
 export async function handler(event: any) {

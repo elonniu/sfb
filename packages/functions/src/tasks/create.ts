@@ -3,14 +3,21 @@ import {jsonResponse} from "sst-helper";
 import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {v4 as uuidv4} from "uuid";
-import {Task} from "./requestDispatch";
+import {Task} from "../requestDispatch";
 import {HttpStatusCode} from "axios";
+import {Table} from "sst/node/table";
 
+const dynamodb = new AWS.DynamoDB.DocumentClient();
 const sf = new AWS.StepFunctions();
+const stateMachineArn= process.env.SF || "";
 
 export const handler = ApiHandler(async (_evt) => {
 
     let task: Task = JSON.parse(_evt.body || "{}");
+
+    if (!task.taskType) {
+        return jsonResponse({msg: "taskType is empty"}, 400);
+    }
 
     if (!task.url || !task.timeout) {
         return jsonResponse({msg: "url, batch, timeout is empty"}, 400);
@@ -77,25 +84,33 @@ export const handler = ApiHandler(async (_evt) => {
     }
 
     const start = Date.now();
-    const taskId = uuidv4().toString();
+    task.taskId = uuidv4().toString();
     const params: StartExecutionInput = {
-        stateMachineArn: process.env.SF || "",
+        stateMachineArn,
         input: JSON.stringify({
             Payload: {
                 ...task,
                 shouldEnd: false,
-                taskId,
             },
         }),
     };
     const state = await sf.startExecution(params).promise();
     const end = Date.now();
 
+    task.executionArn = state.executionArn;
+    task.startDate = state.startDate;
+    task.createdAt = new Date().toISOString();
+
+    await dynamodb.put({
+        TableName: Table.tasks.tableName,
+        Item: {
+            ...task
+        },
+    } as AWS.DynamoDB.DocumentClient.PutItemInput).promise();
+
     return jsonResponse({
-        taskId,
         latency: Number(end.toString()) - Number(start.toString()),
-        payload: {...task},
-        state,
+        task: {...task},
     });
 
 });
