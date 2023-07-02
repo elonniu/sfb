@@ -70,7 +70,7 @@ export const handler = ApiHandler(async (_evt) => {
         }
         task.endTime = new Date(new Date(task.endTime).getTime()).toISOString();
     } else {
-        task.endTime = new Date(new Date(task.startTime).getTime() + 3600 * 1000).toISOString();
+        task.endTime = new Date(new Date(task.startTime).getTime() + 600 * 1000).toISOString();
     }
 
     // endTime must be greater than startTime

@@ -22,6 +22,6 @@
     "packages/*"
   ],
   "dependencies": {
-    "sst-helper": "^0.0.59"
+    "sst-helper": "^0.0.60"
   }
 }

@@ -1,11 +1,10 @@
 import {ApiHandler} from "sst/node/api";
-import {jsonResponse, sfUrl} from "sst-helper";
+import {executionUrl, jsonResponse} from "sst-helper";
 import AWS from "aws-sdk";
 import {Table} from "sst/node/table";
 
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const sf = new AWS.StepFunctions();
-const stateMachineArn = process.env.SF || "";
 const aws_region = process.env.AWS_REGION || "";
 
 export const handler = ApiHandler(async (_evt) => {
@@ -27,7 +26,7 @@ export const handler = ApiHandler(async (_evt) => {
                 executionArn: item.executionArn
             }).promise();
             item.status = execution.status;
-            item.executionUrl = sfUrl(stateMachineArn, aws_region);
+            item.executionUrl = executionUrl(item.executionArn, aws_region);
         }
     }
 
