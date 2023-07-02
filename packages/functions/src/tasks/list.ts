@@ -3,11 +3,14 @@ import {executionUrl, jsonResponse} from "sst-helper";
 import AWS from "aws-sdk";
 import {Table} from "sst/node/table";
 
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const aws_region = process.env.AWS_REGION || "";
 const TableName = Table.tasks.tableName;
+const current_region = process.env.AWS_REGION || "";
 
 export const handler = ApiHandler(async (_evt) => {
+
+    const region = _evt.queryStringParameters?.region || current_region;
+
+    const dynamodb = new AWS.DynamoDB.DocumentClient({region});
 
     // get all items from the table
     const data = await dynamodb.scan({
@@ -21,7 +24,7 @@ export const handler = ApiHandler(async (_evt) => {
 
     data.Items && data.Items.forEach((item: any) => {
         item.states && item.states.forEach((state: any) => {
-            state.executionUrl = executionUrl(state.executionArn, aws_region);
+            state.executionUrl = executionUrl(state.executionArn, region);
         });
     });
 
