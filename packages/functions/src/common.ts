@@ -36,6 +36,6 @@ export function delay(startSeconds: number) {
     }
 
     const ms = 1000 - new Date().getMilliseconds();
-    console.log(`Waiting for move ${startSeconds} to ${startSeconds + 1}, delay ${ms} milliseconds until the next second`);
+    console.log(`Moving ${startSeconds} to ${startSeconds + 1} seconds, waiting ${ms} milliseconds`);
     return new Promise(resolve => setTimeout(resolve, ms));
 }

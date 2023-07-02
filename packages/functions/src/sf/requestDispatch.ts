@@ -24,7 +24,7 @@ export async function handler(event: any) {
         for (let i = 0; i < task.n; i++) {
             list.push({...task});
         }
-        await snsBatch(Topic.Topic.topicArn, list);
+        await sendToSns(list);
         return {shouldEnd: true};
     }
 
@@ -33,13 +33,17 @@ export async function handler(event: any) {
         for (let i = 0; i < task.qps; i++) {
             list.push({...task});
         }
-        const start = new Date().toISOString();
-        await snsBatch(Topic.Topic.topicArn, list);
-        const end = new Date().toISOString();
-        console.log(`snsBatch latency: ${new Date(end).getTime() - new Date(start).getTime()} ms`);
+        await sendToSns(list);
         await delay(startSeconds);
         return {...task, shouldEnd: false};
     }
 
     return {shouldEnd: true};
+}
+
+export async function sendToSns(tasks: Task[]) {
+    const start = new Date().toISOString();
+    await snsBatch(Topic.Topic.topicArn, tasks);
+    const end = new Date().toISOString();
+    console.log(`SnsBatch ${tasks.length} messages latency: ${new Date(end).getTime() - new Date(start).getTime()} ms`);
 }
