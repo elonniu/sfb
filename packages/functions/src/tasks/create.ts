@@ -187,22 +187,23 @@ export async function dispatchRegions(task: Task) {
                 }),
             });
         }
-        task.states = await startExecutionBatch(region, sfExe);
+        const states = await startExecutionBatch(region, sfExe);
 
         const dynamodb = new AWS.DynamoDB.DocumentClient({region});
         await dynamodb.put({
             TableName: Table.tasks.tableName,
             Item: {
                 ...task,
+                states,
                 createdAt: new Date().toISOString(),
             },
         } as AWS.DynamoDB.DocumentClient.PutItemInput).promise();
 
-        task.states.forEach((state) => {
+        states.forEach((state) => {
             state.executionUrl = executionUrl(state.executionArn, region);
         });
 
-        states[region] = task.states;
+        states[region] = states;
     }
 
     return states;
