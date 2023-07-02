@@ -4,7 +4,6 @@ import AWS from "aws-sdk";
 import {Table} from "sst/node/table";
 
 const dynamodb = new AWS.DynamoDB.DocumentClient();
-const sf = new AWS.StepFunctions();
 const aws_region = process.env.AWS_REGION || "";
 const TableName = Table.tasks.tableName;
 
@@ -18,6 +17,12 @@ export const handler = ApiHandler(async (_evt) => {
     // desc by createdAt
     data.Items && data.Items.sort((a, b) => {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    data.Items && data.Items.forEach((item: any) => {
+        item.states.forEach((state: any) => {
+            state.executionUrl = executionUrl(state.executionArn, aws_region);
+        });
     });
 
     return jsonResponse({
