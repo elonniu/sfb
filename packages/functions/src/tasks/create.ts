@@ -145,6 +145,8 @@ export async function dispatchRegions(task: Task) {
 
     for (const region of task.regions) {
 
+        task.region = region;
+
         let sfExe: StartExecutionInput[] = [];
 
         if (task.n && task.c) {

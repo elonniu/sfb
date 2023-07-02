@@ -13,6 +13,7 @@ export interface Task {
     report: boolean;
     taskName: string;
     regions: string[];
+    region: string;
     taskId: string;
     taskType: string;
     url: string;

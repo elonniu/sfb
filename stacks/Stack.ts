@@ -96,8 +96,8 @@ export function Stack({stack}: StackContext) {
 
     const taskCreateFunction = new Function(stack, "taskCreateFunction", {
         handler: "packages/functions/src/tasks/create.handler",
-        memorySize: 2048,
         permissions: ['states:StartExecution', 'dynamodb:PutItem'],
+        memorySize: 2048,
         bind: [taskTable],
         environment: {
             DISPATCH_SF_ARN: dispatchStateMachine.stateMachineArn,
@@ -107,28 +107,29 @@ export function Stack({stack}: StackContext) {
 
     const taskListFunction = new Function(stack, "taskListFunction", {
         handler: "packages/functions/src/tasks/list.handler",
+        permissions: ['dynamodb:Scan'],
         memorySize: 2048,
         bind: [taskTable]
     });
 
     const taskAbortFunction = new Function(stack, "taskAbortFunction", {
         handler: "packages/functions/src/tasks/abort.handler",
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem'],
         memorySize: 2048,
-        permissions: ['states:StopExecution'],
         bind: [taskTable]
     });
 
     const taskDeleteFunction = new Function(stack, "taskDeleteFunction", {
         handler: "packages/functions/src/tasks/delete.handler",
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem'],
         memorySize: 2048,
-        permissions: ['states:StopExecution'],
         bind: [taskTable]
     });
 
     const regionsFunction = new Function(stack, "regionsFunction", {
         handler: "packages/functions/src/tasks/regions.handler",
+        permissions: ['ec2:describeRegions', 'cloudformation:DescribeStacks'],
         memorySize: 2048,
-        permissions: ['cloudformation:DescribeStacks', 'ec2:describeRegions']
     });
 
     const sfStatusChangeLambda = new Function(stack, "lambda", {
@@ -181,6 +182,7 @@ export function Stack({stack}: StackContext) {
         apiFunction: lambdaUrl(apiFunction.functionName, stack.region),
         RequestStateMachine: sfUrl(requestStateMachine.stateMachineArn, stack.region),
         SfRequestFunction: lambdaUrl(sfRequestFunction.functionName, stack.region),
+        taskDeleteFunction: lambdaUrl(taskDeleteFunction.functionName, stack.region),
     });
 
     return {logsTable};

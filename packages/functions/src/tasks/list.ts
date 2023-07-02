@@ -12,24 +12,30 @@ export const handler = ApiHandler(async (_evt) => {
 
     const dynamodb = new AWS.DynamoDB.DocumentClient({region});
 
-    // get all items from the table
-    const data = await dynamodb.scan({
-        TableName
-    }).promise();
+    try {
+        const data = await dynamodb.scan({
+            TableName
+        }).promise();
 
-    // desc by createdAt
-    data.Items && data.Items.sort((a, b) => {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-
-    data.Items && data.Items.forEach((item: any) => {
-        item.states && item.states.forEach((state: any) => {
-            state.executionUrl = executionUrl(state.executionArn, region);
+        // desc by createdAt
+        data.Items && data.Items.sort((a, b) => {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
-    });
 
-    return jsonResponse({
-        ...data
-    });
+        data.Items && data.Items.forEach((item: any) => {
+            item.states && item.states.forEach((state: any) => {
+                state.executionUrl = executionUrl(state.executionArn, region);
+            });
+        });
+
+        return jsonResponse({
+            ...data
+        });
+    } catch (e: any) {
+        console.error(e);
+        return jsonResponse({
+            msg: e.message
+        }, 500);
+    }
 
 });

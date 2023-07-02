@@ -2,8 +2,9 @@ import {ApiHandler} from "sst/node/api";
 import {jsonResponse} from "sst-helper";
 import AWS from "aws-sdk";
 import {Table} from "sst/node/table";
+import {batchGet} from "../lib/ddb";
+import {batchStop} from "../lib/sf";
 
-const sf = new AWS.StepFunctions();
 const TableName = Table.tasks.tableName;
 const current_region = process.env.AWS_REGION || "";
 
@@ -11,35 +12,52 @@ export const handler = ApiHandler(async (_evt) => {
 
     const region = _evt.queryStringParameters?.region || current_region;
 
-    const dynamodb = new AWS.DynamoDB.DocumentClient({region});
-
     const taskId = _evt.pathParameters?.id;
 
-    // get item from TableName
-    const data = await dynamodb.get({
-        TableName,
-        Key: {
-            taskId
-        }
-    } as any).promise();
-
-    if (!data.Item) {
-        return jsonResponse({msg: "task not found"}, 404);
-    }
-
-    // stop step functions Execution
-    if (data.Item.states) {
-        for (let state of data.Item.states) {
-            if (state.executionArn) {
-                await sf.stopExecution({
-                    executionArn: state.executionArn.replace(current_region, region)
-                }).promise();
+    try {
+        const dynamodb = new AWS.DynamoDB.DocumentClient({region});
+        const data = await dynamodb.get({
+            TableName,
+            Key: {
+                taskId
             }
-        }
-    }
+        } as any).promise();
 
-    return jsonResponse({
-        message: "task stopped"
-    });
+        if (!data.Item) {
+            return jsonResponse({msg: "task not found"}, 404);
+        }
+
+        const task = data.Item;
+
+        const globalTasks = (task.regions && task.regions.length) > 1
+            ? await batchGet(TableName, {taskId}, task.regions)
+            : [task];
+
+        // delete global tasks
+        if (globalTasks) {
+            let listStop = [];
+            for (let current of globalTasks) {
+                if (current && current.states) {
+                    for (let state of current.states) {
+                        listStop.push({
+                            region: current.region,
+                            executionArn: state.executionArn
+                        });
+                    }
+                }
+            }
+            await batchStop(listStop);
+        }
+
+        return jsonResponse({
+            message: "task aborted",
+            task: globalTasks
+        });
+    } catch (e: any) {
+        return jsonResponse({
+            message: "task aborted",
+            error: e.message
+        });
+    }
 
 });

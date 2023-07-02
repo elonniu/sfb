@@ -2,6 +2,24 @@ import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {Execution} from "../common";
 
+async function batchStopRegions(executionArn: string, region: string) {
+    try {
+        const stepFunctions = new AWS.StepFunctions({region});
+        await stepFunctions.stopExecution({executionArn}).promise();
+    } catch (error: any) {
+
+    }
+}
+
+export async function batchStop(list: any[]) {
+    let promises = [];
+    for (let i = 0; i < list.length; i++) {
+        const {executionArn, region} = list[i];
+        promises.push(batchStopRegions(executionArn, region));
+    }
+    await Promise.all(promises);
+}
+
 export async function startExecutionBatch(region: string, items: StartExecutionInput[]) {
 
     const stepFunctions = new AWS.StepFunctions({region});
