@@ -1,8 +1,9 @@
-import {snsBatch} from "./lib/sns";
+import {snsBatch} from "../lib/sns";
 import {Topic} from "sst/node/topic";
 import console from "console";
 import {HttpStatusCode} from "axios";
 import {Arn, StartExecutionOutput, Timestamp} from "aws-sdk/clients/stepfunctions";
+import {delay} from "./request";
 
 export interface Task {
     shouldEnd: boolean;
@@ -11,17 +12,16 @@ export interface Task {
     url: string;
     qps?: number;
     n?: number;
-    left?: number;
+    perStateMachineExecuted?: number,
+    currentStateMachineExecutedLeft?: number,
     c?: number;
-    client?: number;
+    taskClient?: number;
     timeout: number;
     successCode: HttpStatusCode;
     startTime: string;
     createdAt: string;
     endTime: string;
-    executionArn?: Arn;
-    startDate?: Timestamp;
-    states: StartExecutionOutput[];
+    states?: StartExecutionOutput[];
 }
 
 export async function handler(event: any) {
@@ -62,11 +62,4 @@ export async function handler(event: any) {
     }
 
     return {shouldEnd: true};
-}
-
-function delay() {
-    // get the milliseconds until the next second.
-    const ms = 1000 - new Date().getMilliseconds();
-    console.log(`waiting for start, delay ${ms} milliseconds until the next second`);
-    return new Promise(resolve => setTimeout(resolve, ms));
 }

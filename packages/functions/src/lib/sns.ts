@@ -28,11 +28,11 @@ async function snsPut(TopicArn: string, items: object[]) {
 }
 
 export async function snsBatch(TopicArn: string, items: object[]) {
-    let sqsMessages = [];
+    let list = [];
 
     for (let i = 0; i < items.length; i++) {
 
-        sqsMessages.push({
+        list.push({
             Id: `${items[i].taskId}-${i}`,
             Message: JSON.stringify({
                 ...items[i],
@@ -41,5 +41,5 @@ export async function snsBatch(TopicArn: string, items: object[]) {
 
     }
 
-    await snsPut(TopicArn, sqsMessages);
+    await snsPut(TopicArn, list);
 }

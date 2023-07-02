@@ -21,13 +21,19 @@ export const handler = ApiHandler(async (_evt) => {
 
     // get step functions Execution status
     for (let item of data.Items || []) {
-        if (item.executionArn) {
-            const execution = await sf.describeExecution({
-                executionArn: item.executionArn
-            }).promise();
-            item.status = execution.status;
-            item.executionUrl = executionUrl(item.executionArn, aws_region);
+
+        if (item.states) {
+            for (let state of item.states) {
+                if (state.executionArn) {
+                    const execution = await sf.describeExecution({
+                        executionArn: state.executionArn
+                    }).promise();
+                    state.status = execution.status;
+                    state.executionUrl = executionUrl(state.executionArn, aws_region);
+                }
+            }
         }
+
     }
 
     return jsonResponse({

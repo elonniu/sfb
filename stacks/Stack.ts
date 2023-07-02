@@ -32,7 +32,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const requestDispatchFunction = new Function(stack, "requestDispatchFunction", {
-        handler: "packages/functions/src/requestDispatch.handler",
+        handler: "packages/functions/src/sf/requestDispatch.handler",
         memorySize: 9999,
     });
 
@@ -46,13 +46,13 @@ export function Stack({stack}: StackContext) {
 
     lambdaTask.next(checkDispatchShouldEnd);
 
-    const dispatchStateMachine = new StateMachine(stack, 'StateMachine', {
+    const dispatchStateMachine = new StateMachine(stack, 'DispatchStateMachine', {
         definition: checkDispatchShouldEnd,
-        stateMachineName: `${stack.stackName}-StateMachine`,
+        stateMachineName: `${stack.stackName}-DispatchStateMachine`,
     });
 
     const requesterFunction = new Function(stack, "requesterFunction", {
-        handler: "packages/functions/src/requester.handler",
+        handler: "packages/functions/src/eda/requester.handler",
         memorySize: 1024,
     });
 
@@ -80,6 +80,7 @@ export function Stack({stack}: StackContext) {
 
     const requestStateMachine = new StateMachine(stack, 'RequestStateMachine', {
         definition: checkRequestShouldEnd,
+        stateMachineName: `${stack.stackName}-RequestStateMachine`,
     });
 
     const taskCreateFunction = new Function(stack, "taskCreateFunction", {

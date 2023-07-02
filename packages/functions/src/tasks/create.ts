@@ -3,9 +3,10 @@ import {jsonResponse} from "sst-helper";
 import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {v4 as uuidv4} from "uuid";
-import {Task} from "../requestDispatch";
+import {Task} from "../sf/requestDispatch";
 import {HttpStatusCode} from "axios";
 import {Table} from "sst/node/table";
+import {startExecutionBatch} from "../lib/sf";
 
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const sf = new AWS.StepFunctions();
@@ -96,43 +97,49 @@ export const handler = ApiHandler(async (_evt) => {
 
     const start = Date.now();
     task.taskId = uuidv4().toString();
-    task.states = [];
+
+    let sfExe: StartExecutionInput[] = [];
 
     if (task.n && task.c) {
-        task.left = Math.ceil(task.n / task.c);
         for (let i = 0; i < task.c; i++) {
-            task.client = i;
-            const params: StartExecutionInput = {
+            const taskClient = i + 1;
+            sfExe.push({
+                name: "request-" + task.taskId + "-" + taskClient,
                 stateMachineArn: requestStateMachineArn,
                 input: JSON.stringify({
                     Payload: {
                         ...task,
+                        taskClient,
+                        perStateMachineExecuted: Math.ceil(task.n / task.c),
+                        currentStateMachineExecutedLeft: Math.ceil(task.n / task.c),
                         shouldEnd: false,
                     },
                 }),
-            };
-            task.states.push(await sf.startExecution(params).promise());
+            });
         }
     } else {
-        task.left = task.n;
-        const params: StartExecutionInput = {
+        sfExe.push({
+            name: "dispatch-" + task.taskId,
             stateMachineArn: dispatchStateMachineArn,
             input: JSON.stringify({
                 Payload: {
                     ...task,
+                    taskClient: 0,
                     shouldEnd: false,
                 },
             }),
-        };
-        task.states.push(await sf.startExecution(params).promise());
+        });
     }
+
+    task.states = await startExecutionBatch(sfExe);
 
     const end = Date.now();
 
     await dynamodb.put({
         TableName: Table.tasks.tableName,
         Item: {
-            ...task
+            ...task,
+            createdAt: new Date().toISOString(),
         },
     } as AWS.DynamoDB.DocumentClient.PutItemInput).promise();
 
