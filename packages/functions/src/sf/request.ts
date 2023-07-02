@@ -9,11 +9,12 @@ export async function handler(event: any) {
 
     const {ExecutionId, input} = event;
     const task: Task = input.value;
+    const startSeconds = new Date().getSeconds();
 
     // now between startTime and endTime
     const now = new Date().getTime();
     if (now < new Date(task.startTime).getTime()) {
-        await delay();
+        await delay(startSeconds);
         return {...task, shouldEnd: false};
     }
 

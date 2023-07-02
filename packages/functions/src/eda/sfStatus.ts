@@ -21,6 +21,7 @@ export async function handler(event: any) {
     } as any).promise();
 
     if (data.Item) {
+
         for (let i = 0; i < data.Item.states.length; i++) {
             const state = data.Item.states[i];
             if (state.executionArn === executionArn) {
@@ -28,13 +29,13 @@ export async function handler(event: any) {
                 break;
             }
         }
-    }
 
-    // update task
-    await dynamodb.put({
-        TableName,
-        Item: data.Item
-    } as any).promise();
+        await dynamodb.put({
+            TableName,
+            Item: data.Item
+        }).promise();
+
+    }
 
     return {};
 }
