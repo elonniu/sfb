@@ -33,6 +33,13 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "url, timeout is empty"}, 400);
     }
 
+    // validate url
+    try {
+        new URL(task.url);
+    } catch (e) {
+        return jsonResponse({msg: "url is invalid"}, 400);
+    }
+
     if (!task.method) {
         return jsonResponse({msg: "method is empty"}, 400);
     }
