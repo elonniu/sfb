@@ -14,7 +14,7 @@ export async function handler(event: any) {
         await requestBatch(task);
 
         if (task.delay !== undefined) {
-            await delay(1000);
+            await delay(task.delay);
         }
     }
 

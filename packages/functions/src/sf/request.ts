@@ -9,29 +9,38 @@ export async function handler(event: any) {
 
     const {ExecutionId, input} = event;
     const task: Task = input.value;
-    const startSeconds = new Date().getSeconds();
+    const invokeStart = new Date().toISOString();
 
-    // now between startTime and endTime
-    const now = new Date().getTime();
-    if (now < new Date(task.startTime).getTime()) {
-        await delay(ExecutionId, startSeconds);
-        return {...task, shouldEnd: false};
-    }
+    task.taskStep = task.taskStep ? task.taskStep++ : 1;
 
-    if (now > new Date(task.endTime).getTime()) {
-        return {shouldEnd: true};
-    }
+    while (true) {
+        if (new Date().getTime() > new Date(invokeStart).getTime() + 898 * 1000) {
+            return {...task, shouldEnd: false};
+        }
 
-    await requestBatch(task, 1);
+        const startSeconds = new Date().getSeconds();
 
-    if (task.currentStateMachineExecutedLeft !== undefined) {
-        task.currentStateMachineExecutedLeft--;
-        if (task.currentStateMachineExecutedLeft === 0) {
+        // now between startTime and endTime
+        const now = new Date().getTime();
+        if (now < new Date(task.startTime).getTime()) {
+            await delay(ExecutionId, startSeconds);
+            continue;
+        }
+
+        if (now > new Date(task.endTime).getTime()) {
             return {shouldEnd: true};
+        }
+
+        await requestBatch(task);
+
+        if (task.currentStateMachineExecutedLeft !== undefined) {
+            task.currentStateMachineExecutedLeft--;
+            if (task.currentStateMachineExecutedLeft === 0) {
+                return {shouldEnd: true};
+            }
         }
     }
 
-    return {...task, shouldEnd: false};
 }
 
 export async function requestBatch(task: Task, batch: number = 1) {
@@ -45,6 +54,7 @@ export async function requestBatch(task: Task, batch: number = 1) {
         const start = Date.now();
         try {
             const {data, status} = await axios.get(task.url, {timeout: task.timeout});
+            console.log(data);
             dataLength = data.toString().length;
             success = status === task.successCode;
         } catch (e: any) {

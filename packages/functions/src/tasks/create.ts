@@ -118,9 +118,9 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "endTime must be greater than startTime"}, 400);
     }
 
-    // endTime must be less than startTime + 24 hours
-    if (new Date(task.startTime).getTime() + 3600 * 24 * 1000 < new Date(task.endTime).getTime()) {
-        return jsonResponse({msg: "endTime must be less than startTime + 24 hours"}, 400);
+    // endTime must be less than startTime + 48 hours
+    if (new Date(task.startTime).getTime() + 3600 * 48 * 1000 < new Date(task.endTime).getTime()) {
+        return jsonResponse({msg: "endTime must be less than startTime + 48 hours"}, 400);
     }
 
     task.taskId = uuidv4().toString();
@@ -166,7 +166,7 @@ export async function dispatchRegions(task: Task) {
             for (let i = 0; i < task.c; i++) {
                 const taskClient = i + 1;
                 sfExe.push({
-                    name: "request-" + task.taskId + "-" + taskClient,
+                    name: `request_${task.taskName}_${task.taskId}-${taskClient}`,
                     stateMachineArn: requestStateMachineArn.replace(current_region, region),
                     input: JSON.stringify({
                         Payload: {
@@ -181,7 +181,7 @@ export async function dispatchRegions(task: Task) {
             }
         } else {
             sfExe.push({
-                name: "dispatch-" + task.taskId,
+                name: `dispatch_${task.taskName}_${task.taskId}`,
                 stateMachineArn: dispatchStateMachineArn.replace(current_region, region),
                 input: JSON.stringify({
                     Payload: {
