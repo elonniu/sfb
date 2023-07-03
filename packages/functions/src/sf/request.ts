@@ -4,6 +4,9 @@ import axios from "axios";
 import {batchPut} from "../lib/ddb";
 import {Table} from "sst/node/table";
 import {v4 as uuidv4} from "uuid";
+import AWS from "aws-sdk";
+
+const stepFunctions = new AWS.StepFunctions();
 
 export async function handler(event: any) {
 
@@ -13,9 +16,19 @@ export async function handler(event: any) {
 
     task.taskStep = task.taskStep ? task.taskStep++ : 1;
 
+    let checkStepFunctionsStatus = 0;
     while (true) {
         if (new Date().getTime() > new Date(invokeStart).getTime() + 898 * 1000) {
             return {...task, shouldEnd: false};
+        }
+
+        checkStepFunctionsStatus++;
+        if (checkStepFunctionsStatus === 10) {
+            const res = await stepFunctions.describeExecution({executionArn: ExecutionId}).promise();
+            if (res && res.status !== 'RUNNING') {
+                return {shouldEnd: true};
+            }
+            checkStepFunctionsStatus = 0;
         }
 
         const startSeconds = new Date().getSeconds();

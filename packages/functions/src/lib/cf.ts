@@ -29,7 +29,6 @@ export async function checkStackDeployment(regions: string[] = []) {
             regions.push(...describeRegions.Regions.map(region => region.RegionName || ""));
         }
     }
-    console.log("checkStackDeployment", regions);
     const promises = regions.map(checkStackInRegion);
     const list = await Promise.all(promises);
     // only return regions that have the stack deployed

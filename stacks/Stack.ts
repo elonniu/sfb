@@ -35,6 +35,7 @@ export function Stack({stack}: StackContext) {
     const requestDispatchFunction = new Function(stack, "requestDispatchFunction", {
         handler: "packages/functions/src/sf/requestDispatch.handler",
         memorySize: 9999,
+        permissions: ['states:DescribeExecution']
     });
 
     const lambdaTask = new LambdaInvoke(stack, 'Invoke Dispatch Lambda', {
@@ -71,6 +72,7 @@ export function Stack({stack}: StackContext) {
     const sfRequestFunction = new Function(stack, "SfRequestFunction", {
         handler: "packages/functions/src/sf/request.handler",
         memorySize: 4048,
+        permissions: ['states:DescribeExecution'],
         bind: [logsTable]
     });
 
