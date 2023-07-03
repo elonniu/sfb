@@ -37,8 +37,8 @@ ApiEndpoint: https://{your-api-url}
 
 ```bash
 curl --location 'https://{your-endpoint}/tasks' \
---header 'Content-Type: application/json' \
---data '{
+  --header 'Content-Type: application/json' \
+  --data '{
     "taskName": "test",
     "taskType": "http",
     "report": true,
@@ -48,16 +48,21 @@ curl --location 'https://{your-endpoint}/tasks' \
     "startTime": "2023-07-01T18:25:37.000+08:00",
     "endTime": "2023-07-01T18:40:37.000+08:00",
     "qps": 1,
+    "regions": [
+        "ap-southeast-1",
+        "us-east-1"
+    ],
     "successCode": 200
 }'
+
 ```
 
 ### 2.4.2 Batch Task
 
 ```bash
 curl --location 'https://{your-endpoint}/tasks' \
---header 'Content-Type: application/json' \
---data '{
+  --header 'Content-Type: application/json' \
+  --data '{
     "taskName": "test",
     "taskType": "http",
     "report": true,
@@ -67,16 +72,21 @@ curl --location 'https://{your-endpoint}/tasks' \
     "timeout": 1000,
     "startTime": "2023-07-01T18:25:37.000+08:00",
     "endTime": "2023-07-01T18:40:37.000+08:00",
+    "regions": [
+        "ap-southeast-1",
+        "us-east-1"
+    ],
     "successCode": 200
 }'
+
 ```
 
 ### 2.4.2 Batch & Client Task
 
 ```bash
 curl --location 'https://{your-endpoint}/tasks' \
---header 'Content-Type: application/json' \
---data '{
+  --header 'Content-Type: application/json' \
+  --data '{
     "taskName": "test",
     "taskType": "http",
     "report": true,
@@ -87,11 +97,16 @@ curl --location 'https://{your-endpoint}/tasks' \
     "timeout": 1000,
     "startTime": "2023-07-01T18:25:37.000+08:00",
     "endTime": "2023-07-01T18:40:37.000+08:00",
+    "regions": [
+        "ap-southeast-1",
+        "us-east-1"
+    ],
     "successCode": 200
 }'
+
 ```
 
-## 3. What are the benefits of using serverless to process images?
+## 3. What are the benefits of using Serverless?
 
 - Pay as you go: only pay for the time your code is running
 - No server management: no need to worry about the infrastructure
