@@ -4,6 +4,7 @@ import console from "console";
 export const SST_STAGE = process.env.SST_STAGE || "";
 export const SST_APP = process.env.SST_APP || "";
 export const StackName = `${SST_STAGE}-${SST_APP}-Stack`;
+export const CloudWatchNamespace = `${SST_STAGE}-${SST_APP}`;
 
 async function checkStackInRegion(region: string) {
 

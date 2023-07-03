@@ -3,10 +3,12 @@ import {Topic} from "sst/node/topic";
 import {delay, Task} from "../common";
 import AWS from "aws-sdk";
 import console from "console";
+import {CloudWatchNamespace} from "../lib/cf";
 
 export const checkStepFunctionsStep = 5;
 
 const stepFunctions = new AWS.StepFunctions();
+const cloudwatch = new AWS.CloudWatch();
 
 export async function handler(event: any) {
 
@@ -55,7 +57,7 @@ export async function handler(event: any) {
             for (let i = 0; i < task.n; i++) {
                 list.push({...task});
             }
-            await sendToSns(list);
+            await sendToSns(ExecutionId, list);
             return {shouldEnd: true};
         }
 
@@ -64,7 +66,7 @@ export async function handler(event: any) {
             for (let i = 0; i < task.qps; i++) {
                 list.push({...task});
             }
-            await sendToSns(list);
+            await sendToSns(ExecutionId, list);
             await delay(startSeconds);
         }
 
@@ -73,12 +75,48 @@ export async function handler(event: any) {
 
 }
 
-export async function sendToSns(tasks: Task[]) {
+export async function sendToSns(ExecutionId: string, tasks: Task[]) {
     const start = new Date().toISOString();
     await snsBatch(Topic.Topic.topicArn, tasks);
     const end = new Date().toISOString();
-    console.log(JSON.stringify({
-        snsMessages: tasks.length,
-        latency: `${new Date(end).getTime() - new Date(start).getTime()} ms`,
-    }));
+
+    const dispatchSnsLatencyMs = new Date(end).getTime() - new Date(start).getTime();
+
+    const params = {
+        MetricData: [
+            {
+                MetricName: 'dispatchSnsLatencyMs',
+                Dimensions: [
+                    {
+                        Name: "TaskId",
+                        Value: tasks[0].taskId
+                    },
+                ],
+                Timestamp: new Date,
+                Unit: 'Milliseconds',
+                Value: dispatchSnsLatencyMs
+            },
+            {
+                MetricName: 'dispatchSnsSize',
+                Dimensions: [
+                    {
+                        Name: "TaskId",
+                        Value: tasks[0].taskId
+                    },
+                ],
+                Timestamp: new Date,
+                Unit: 'Count',
+                Value: tasks.length
+            },
+        ],
+        Namespace: CloudWatchNamespace
+    };
+
+    cloudwatch.putMetricData(params, function (err, data) {
+        if (err) {
+            console.log(err, err.stack);
+        } else {
+            // console.log(data);
+        }
+    });
 }
