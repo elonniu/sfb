@@ -9,6 +9,8 @@ export async function handler(event: any) {
 
     const {ExecutionId, input} = event;
 
+    console.log(JSON.stringify({ExecutionId, input}));
+
     const task: Task = input.value;
     const invokeStart = new Date().toISOString();
 
@@ -34,7 +36,7 @@ export async function handler(event: any) {
         // now between startTime and endTime
         const now = new Date().getTime();
         if (now < new Date(task.startTime).getTime()) {
-            await delay(ExecutionId, startSeconds);
+            await delay(startSeconds);
             continue;
         }
 
@@ -47,7 +49,7 @@ export async function handler(event: any) {
             for (let i = 0; i < task.n; i++) {
                 list.push({...task});
             }
-            await sendToSns(ExecutionId, list);
+            await sendToSns(list);
             return {shouldEnd: true};
         }
 
@@ -56,8 +58,8 @@ export async function handler(event: any) {
             for (let i = 0; i < task.qps; i++) {
                 list.push({...task});
             }
-            await sendToSns(ExecutionId, list);
-            await delay(ExecutionId, startSeconds);
+            await sendToSns(list);
+            await delay(startSeconds);
         }
 
     }
@@ -65,13 +67,12 @@ export async function handler(event: any) {
 
 }
 
-export async function sendToSns(executionId: string, tasks: Task[]) {
+export async function sendToSns(tasks: Task[]) {
     const start = new Date().toISOString();
     await snsBatch(Topic.Topic.topicArn, tasks);
     const end = new Date().toISOString();
-    // console.log(JSON.stringify({
-    //     snsMessages: tasks.length,
-    //     latency: `${new Date(end).getTime() - new Date(start).getTime()} ms`,
-    //     executionId
-    // }));
+    console.log(JSON.stringify({
+        snsMessages: tasks.length,
+        latency: `${new Date(end).getTime() - new Date(start).getTime()} ms`,
+    }));
 }

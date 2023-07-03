@@ -14,6 +14,8 @@ export async function handler(event: any) {
     const task: Task = input.value;
     const invokeStart = new Date().toISOString();
 
+    console.log(JSON.stringify({ExecutionId, input}));
+
     task.taskStep = task.taskStep ? task.taskStep++ : 1;
 
     let checkStepFunctionsStatus = 0;
@@ -36,7 +38,7 @@ export async function handler(event: any) {
         // now between startTime and endTime
         const now = new Date().getTime();
         if (now < new Date(task.startTime).getTime()) {
-            await delay(ExecutionId, startSeconds);
+            await delay(startSeconds);
             continue;
         }
 

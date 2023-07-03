@@ -38,7 +38,7 @@ export interface Task {
     states?: Execution[];
 }
 
-export function delay(executionId: string, startSeconds: number) {
+export function delay(startSeconds: number) {
     // has already passed the start second
     if (new Date().getSeconds() !== startSeconds) {
         return;
@@ -49,7 +49,6 @@ export function delay(executionId: string, startSeconds: number) {
         from: startSeconds,
         to: startSeconds + 1,
         waitingMs,
-        executionId
     }));
     return new Promise(resolve => setTimeout(resolve, waitingMs));
 }
