@@ -1,6 +1,10 @@
 import {HttpStatusCode} from "axios";
 import {Arn} from "aws-sdk/clients/stepfunctions";
 
+export interface StatesList {
+    [key: string]: Execution[];
+}
+
 export interface Execution {
     executionArn: Arn;
     startDate: string;
@@ -12,16 +16,16 @@ export interface Task {
     shouldEnd: boolean;
     report: boolean;
     taskName: string;
-    regions: string[];
-    region: string;
     taskId: string;
     taskType: string;
     taskClient?: number;
     url: string;
-    method: string;
+    method: "GET" | "POST" | "PUT" | string;
     qps?: number;
     n?: number;
     c?: number;
+    regions: string[];
+    region: string;
     perStateMachineExecuted?: number,
     currentStateMachineExecutedLeft?: number,
     delay?: number;

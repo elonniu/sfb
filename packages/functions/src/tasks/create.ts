@@ -3,7 +3,7 @@ import {executionUrl, jsonResponse} from "sst-helper";
 import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {v4 as uuidv4} from "uuid";
-import {Task} from "../common";
+import {StatesList, Task} from "../common";
 import {HttpStatusCode} from "axios";
 import {Table} from "sst/node/table";
 import {startExecutionBatch} from "../lib/sf";
@@ -154,7 +154,7 @@ export const handler = ApiHandler(async (_evt) => {
 });
 
 export async function dispatchRegions(task: Task) {
-    let states = {};
+    let statesList: StatesList = {};
 
     for (const region of task.regions) {
 
@@ -208,8 +208,8 @@ export async function dispatchRegions(task: Task) {
             state.executionUrl = executionUrl(state.executionArn, region);
         });
 
-        states[region] = states;
+        statesList[region] = states;
     }
 
-    return states;
+    return statesList;
 }
