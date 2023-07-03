@@ -74,6 +74,11 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "qps must be greater than 0 and be integer"}, 400);
     }
 
+    // delay must be greater than 0 and be integer
+    if (task.delay !== undefined && (task.delay <= 0 || !Number.isInteger(task.delay))) {
+        return jsonResponse({msg: "delay must be greater than 0 and be integer"}, 400);
+    }
+
     if (task.timeout === undefined) {
         task.timeout = 1000;
     }

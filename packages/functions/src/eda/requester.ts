@@ -1,5 +1,5 @@
-import {Task} from "../common";
 import {requestBatch} from "../sf/request";
+import {Task} from "../common";
 
 export async function handler(event: any) {
 
@@ -12,8 +12,16 @@ export async function handler(event: any) {
         const task: Task = JSON.parse(item.Sns.Message);
 
         await requestBatch(task);
+
+        if (task.delay !== undefined) {
+            await delay(1000);
+        }
     }
 
     return {};
 
+}
+
+function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }

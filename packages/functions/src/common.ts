@@ -16,14 +16,15 @@ export interface Task {
     region: string;
     taskId: string;
     taskType: string;
+    taskClient?: number;
     url: string;
     method: string;
     qps?: number;
     n?: number;
+    c?: number;
     perStateMachineExecuted?: number,
     currentStateMachineExecutedLeft?: number,
-    c?: number;
-    taskClient?: number;
+    delay?: number;
     timeout: number;
     successCode: HttpStatusCode;
     startTime: string;

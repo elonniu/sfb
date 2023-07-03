@@ -23,8 +23,15 @@ export const handler = ApiHandler(async (_evt) => {
         });
 
         data.Items && data.Items.forEach((item: any) => {
+            item.status = "SUCCEEDED";
             item.states && item.states.forEach((state: any) => {
                 state.executionUrl = executionUrl(state.executionArn, region);
+                if (state.status === "WAITING") {
+                    item.status = "WAITING";
+                }
+                if (state.status === "RUNNING") {
+                    item.status = "RUNNING";
+                }
             });
         });
 
