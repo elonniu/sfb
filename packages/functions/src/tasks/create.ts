@@ -133,7 +133,7 @@ export const handler = ApiHandler(async (_evt) => {
         const notDeployRegions = task.regions.filter((region) => !deployRegions.includes(region));
         if (notDeployRegions.length > 0) {
             return jsonResponse({
-                msg: `ServerlessBench not in [${notDeployRegions.join(', ')}] yet, already regions [${deployRegions.join(', ')}]`
+                msg: `ServerlessBench not in [${notDeployRegions.join(', ')}] yet, available regions [${deployRegions.join(', ')}]`
             }, 400);
         }
     }
