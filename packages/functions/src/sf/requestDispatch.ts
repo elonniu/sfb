@@ -4,6 +4,8 @@ import {delay, Task} from "../common";
 import AWS from "aws-sdk";
 import console from "console";
 
+export const checkStepFunctionsStep = 5;
+
 const stepFunctions = new AWS.StepFunctions();
 
 export async function handler(event: any) {
@@ -17,14 +19,14 @@ export async function handler(event: any) {
 
     task.taskStep = task.taskStep ? task.taskStep++ : 1;
 
-    let checkStepFunctionsStatus = 0;
+    let checkStepFunctionsCounter = 0;
     while (true) {
         if (new Date().getTime() > new Date(invokeStart).getTime() + 898 * 1000) {
             return {...task, shouldEnd: false};
         }
 
-        checkStepFunctionsStatus++;
-        if (checkStepFunctionsStatus === 10) {
+        checkStepFunctionsCounter++;
+        if (checkStepFunctionsCounter === checkStepFunctionsStep) {
             const start = new Date().toISOString();
             const res = await stepFunctions.describeExecution({executionArn: ExecutionId}).promise();
             const end = new Date().toISOString();
@@ -32,7 +34,7 @@ export async function handler(event: any) {
                 console.log(`return because execution is ${res.status}, check latency: ${new Date(end).getTime() - new Date(start).getTime()} ms`);
                 return {shouldEnd: true};
             }
-            checkStepFunctionsStatus = 0;
+            checkStepFunctionsCounter = 0;
         }
 
         const startSeconds = new Date().getSeconds();
