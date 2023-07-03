@@ -183,7 +183,7 @@ export async function dispatchRegions(task: Task) {
             }
         } else {
             sfExe.push({
-                name: `dispatch_${task.taskName}_${task.taskId}`,
+                name: `${task.qps ? 'qps' : 'batch'}_${task.taskName}_${task.taskId}`,
                 stateMachineArn: dispatchStateMachineArn.replace(current_region, region),
                 input: JSON.stringify({
                     Payload: {
