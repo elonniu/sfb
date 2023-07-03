@@ -2,6 +2,7 @@ import {snsBatch} from "../lib/sns";
 import {Topic} from "sst/node/topic";
 import {delay, Task} from "../common";
 import AWS from "aws-sdk";
+import console from "console";
 
 const stepFunctions = new AWS.StepFunctions();
 
@@ -24,8 +25,11 @@ export async function handler(event: any) {
 
         checkStepFunctionsStatus++;
         if (checkStepFunctionsStatus === 10) {
+            const start = new Date().toISOString();
             const res = await stepFunctions.describeExecution({executionArn: ExecutionId}).promise();
+            const end = new Date().toISOString();
             if (res && res.status !== 'RUNNING') {
+                console.log(`return because step function is not running, check latency: ${new Date(end).getTime() - new Date(start).getTime()} ms`);
                 return {shouldEnd: true};
             }
             checkStepFunctionsStatus = 0;
