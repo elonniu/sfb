@@ -1,5 +1,4 @@
 import AWS from "aws-sdk";
-import console from "console";
 
 export const SST_STAGE = process.env.SST_STAGE || "";
 export const SST_APP = process.env.SST_APP || "";
@@ -32,6 +31,5 @@ export async function checkStackDeployment(regions: string[] = []) {
     }
     const promises = regions.map(checkStackInRegion);
     const list = await Promise.all(promises);
-    // only return regions that have the stack deployed
     return list.filter(region => region !== null);
 }
