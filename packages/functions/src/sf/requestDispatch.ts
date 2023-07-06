@@ -80,6 +80,10 @@ export async function sendToSns(ExecutionId: string, tasks: Task[]) {
     await snsBatch(Topic.Topic.topicArn, tasks);
     const end = new Date().toISOString();
 
+    if (tasks[0].report) {
+        return;
+    }
+
     const dispatchSnsLatencyMs = new Date(end).getTime() - new Date(start).getTime();
 
     const params = {

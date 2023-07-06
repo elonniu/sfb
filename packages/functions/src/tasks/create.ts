@@ -29,6 +29,8 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "taskType is empty"}, 400);
     }
 
+    task.taskType = task.taskType.toUpperCase();
+
     if (!task.url || !task.timeout) {
         return jsonResponse({msg: "url, timeout is empty"}, 400);
     }
@@ -43,6 +45,7 @@ export const handler = ApiHandler(async (_evt) => {
     if (!task.method) {
         return jsonResponse({msg: "method is empty"}, 400);
     }
+    task.method = task.method.toUpperCase();
 
     // n and qps can not be both empty
     if (task.n === undefined && task.qps === undefined) {
