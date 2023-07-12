@@ -9,6 +9,7 @@ const TableName = Table.ip.tableName;
 export const handler = ApiHandler(async (_evt) => {
 
     const ip = _evt.requestContext.http.sourceIp;
+    const now = new Date().toISOString();
 
     const params = {
         TableName,
@@ -16,12 +17,14 @@ export const handler = ApiHandler(async (_evt) => {
             ip
         },
         ExpressionAttributeNames: {
-            '#attr': 'tally'
+            '#attr': 'tally',
+            '#time': 'startAt'
         },
         ExpressionAttributeValues: {
-            ':inc': 1
+            ':inc': 1,
+            ':now': now
         },
-        UpdateExpression: 'ADD #attr :inc',
+        UpdateExpression: 'ADD #attr :inc SET #time = if_not_exists(#time, :now)',
         ReturnValues: 'UPDATED_NEW'
     };
 
