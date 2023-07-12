@@ -164,6 +164,7 @@ export const handler = ApiHandler(async (_evt) => {
             latency: Number(end.toString()) - Number(start.toString()),
             ...task,
             states,
+            nPerInstance: (task.n && task.c) ? Math.ceil(task.n / task.c) : undefined,
         });
 
     } catch (e: any) {
