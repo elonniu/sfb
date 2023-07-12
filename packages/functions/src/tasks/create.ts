@@ -235,22 +235,34 @@ async function dispatchRegionsLambda(task: Task) {
 
 async function dispatchRegionsEc2(task: Task) {
 
+    let ec2Instances: any[] = [];
+
     for (const region of task.regions) {
 
         task.region = region;
 
         if (task.n && task.c) {
-            await createInstance(task, region, task.c);
+            ec2Instances = await createInstances(task, region, task.c);
         } else {
-            await createInstance(task, region);
+            ec2Instances = await createInstances(task, region);
         }
+
+        const dynamodb = new AWS.DynamoDB.DocumentClient({region});
+        await dynamodb.put({
+            TableName: Table.tasks.tableName,
+            Item: {
+                ...task,
+                ec2Instances,
+                createdAt: new Date().toISOString(),
+            },
+        } as AWS.DynamoDB.DocumentClient.PutItemInput).promise();
 
     }
 
-    return [];
+    return ec2Instances;
 }
 
-async function createInstance(task: Task, region: string, MaxCount: number = 1) {
+async function createInstances(task: Task, region: string, MaxCount: number = 1) {
     let request_count = task.n;
 
     if (task.qps) {
@@ -261,13 +273,16 @@ async function createInstance(task: Task, region: string, MaxCount: number = 1) 
         request_count = Math.ceil(task.n / task.c);
     }
 
+    const start_time = Math.round(new Date(task.startTime).getTime() / 1000);
+    const end_time = Math.round(new Date(task.endTime).getTime() / 1000);
+
     const ec2 = new AWS.EC2({apiVersion: '2016-11-15', region});
 
     const qpsScript = `#!/bin/bash
 
 url="${task.url}"
-start_time=1638326400
-end_time=1638330000
+start_time=${start_time}
+end_time=${end_time}
 request_count=${request_count}
 taskId=${task.taskId}
 logfile=/tmp/log.${task.taskId}.txt
@@ -300,7 +315,8 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
     const batchscript = `#!/bin/bash
 
 url="${task.url}"
-start_time=1638326400
+start_time=${start_time}
+end_time=${end_time}
 request_count=${request_count}
 taskId=${task.taskId}
 logfile=/tmp/log.${task.taskId}.txt
@@ -323,23 +339,64 @@ INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.2
 aws ec2 terminate-instances --instance-ids $INSTANCE_ID
 `;
 
-    // cd /var/lib/cloud/instance/scripts/
+    // cat /var/lib/cloud/instance/scripts/part-001
     // cat /tmp/log*
     // sudo cat /var/log/cloud-init-output.log
 
     const bootScript = task.qps ? qpsScript : batchscript;
 
-    const runInstanceParams: EC2.Types.RunInstancesRequest = {
-        ImageId: 'ami-0b94777c7d8bfe7e3',
-        InstanceType: 't2.micro',
-        MinCount: 1,
-        MaxCount: 1,
-        KeyName: 'mac',
-        UserData: Buffer.from(bootScript).toString('base64'),
-        IamInstanceProfile: {
-            Name: INSTANCE_PROFILE_NAME,
-        }
-    };
+    const runBatch = 20;
 
-    await ec2.runInstances(runInstanceParams).promise();
+    let InstanceIds: string[] = [];
+
+    if (MaxCount <= runBatch) {
+        const runInstanceParams: EC2.Types.RunInstancesRequest = {
+            ImageId: 'ami-0b94777c7d8bfe7e3',
+            InstanceType: 't2.micro',
+            MinCount: 1,
+            MaxCount: MaxCount,
+            KeyName: 'mac',
+            UserData: Buffer.from(bootScript).toString('base64'),
+            IamInstanceProfile: {
+                Name: INSTANCE_PROFILE_NAME,
+            }
+        };
+
+        const result = await ec2.runInstances(runInstanceParams).promise();
+        result.Instances?.forEach((instance) => {
+            if (instance.InstanceId) {
+                InstanceIds.push(instance.InstanceId);
+            }
+        });
+
+
+    } else {
+        // get MaxCount / 10
+        const count = Math.ceil(MaxCount / runBatch);
+
+        // for count
+        for (let i = 0; i < count; i++) {
+            const runInstanceParams: EC2.Types.RunInstancesRequest = {
+                ImageId: 'ami-0b94777c7d8bfe7e3',
+                InstanceType: 't2.micro',
+                MinCount: 1,
+                MaxCount: runBatch,
+                KeyName: 'mac',
+                UserData: Buffer.from(bootScript).toString('base64'),
+                IamInstanceProfile: {
+                    Name: INSTANCE_PROFILE_NAME,
+                }
+            };
+
+            const result = await ec2.runInstances(runInstanceParams).promise();
+            result.Instances?.forEach((instance) => {
+                if (instance.InstanceId) {
+                    InstanceIds.push(instance.InstanceId);
+                }
+            });
+        }
+    }
+
+    return InstanceIds;
+
 }
