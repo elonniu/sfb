@@ -1,6 +1,6 @@
 import {DynamoDB} from "aws-sdk";
 
-const dynamoDb = new DynamoDB.DocumentClient();
+export const dynamoDb = new DynamoDB.DocumentClient();
 
 async function batchDeleteRegions(TableName: string, Key: object, region: string) {
     try {

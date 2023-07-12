@@ -170,7 +170,8 @@ export function Stack({stack}: StackContext) {
 
     const ec2StatusChangeLambda = new Function(stack, "ec2StatusChange", {
         handler: "packages/functions/src/eda/ec2Status.handler",
-        bind: [taskTable]
+        bind: [taskTable],
+        permissions: ["ec2:*"]
     });
 
     new EventBus(stack, "Bus", {

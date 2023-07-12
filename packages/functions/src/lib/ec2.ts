@@ -1,6 +1,5 @@
 import AWS from "aws-sdk";
 import {RunInstancesRequest} from "aws-sdk/clients/ec2";
-import {Ec2Status} from "../common";
 
 export async function batchStopEc2(InstanceIds: string[], region: string) {
     try {
@@ -15,7 +14,7 @@ export async function runInstancesBatch(region: string, items: RunInstancesReque
 
     const ec2 = new AWS.EC2({apiVersion: '2016-11-15', region});
 
-    let InstanceIds: Ec2Status[] = [];
+    let InstanceIds = {};
 
     const batchWriteParallel = async (items: RunInstancesRequest[]) => {
         const promises = [];
@@ -34,10 +33,7 @@ export async function runInstancesBatch(region: string, items: RunInstancesReque
 
                 item.Instances?.forEach((instance) => {
                     if (instance.InstanceId) {
-                        InstanceIds.push({
-                            InstanceId: instance.InstanceId,
-                            Status: "WAITING",
-                        });
+                        InstanceIds[instance.InstanceId] = "WAITING";
                     }
                 });
 
@@ -56,7 +52,7 @@ export async function runInstances(region: string, item: RunInstancesRequest, Ma
 
     const runBatch = 20;
 
-    let InstanceIds: Ec2Status[] = [];
+    let InstanceIds = {};
 
     if (MaxCount <= runBatch) {
 

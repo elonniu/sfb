@@ -255,7 +255,7 @@ async function dispatchRegionsLambda(task: Task) {
 
 async function dispatchRegionsEc2(task: Task) {
 
-    let ec2Instances: any[] = [];
+    let ec2Instances = {};
 
     for (const region of task.regions) {
 
@@ -300,7 +300,7 @@ url="${task.url}"
 start_time=${start_time}
 end_time=${end_time}
 request_count=${request_count}
-qps=${task.qps}
+qps=${task.qps || ""}
 taskId=${task.taskId}
 logfile=/tmp/log.${task.taskId}.txt
 BUCKET_NAME=${BUCKET_NAME}
@@ -346,7 +346,22 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
         UserData: Buffer.from(bootScript).toString('base64'),
         IamInstanceProfile: {
             Name: INSTANCE_PROFILE_NAME,
-        }
+        },
+        TagSpecifications: [
+            {
+                ResourceType: "instance",
+                Tags: [
+                    {
+                        Key: "Name",
+                        Value: `serverless-bench-${task.taskName}`
+                    },
+                    {
+                        Key: "TaskId",
+                        Value: task.taskId
+                    }
+                ]
+            },
+        ]
     };
 
     return await runInstances(region, runInstanceParams, MaxCount);
