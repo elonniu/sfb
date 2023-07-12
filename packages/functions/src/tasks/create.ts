@@ -1,6 +1,6 @@
 import {ApiHandler} from "sst/node/api";
 import {executionUrl, jsonResponse} from "sst-helper";
-import AWS from "aws-sdk";
+import AWS, {EC2} from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {v4 as uuidv4} from "uuid";
 import {StatesList, Task} from "../common";
@@ -8,6 +8,12 @@ import {HttpStatusCode} from "axios";
 import {Table} from "sst/node/table";
 import {startExecutionBatch} from "../lib/sf";
 import {checkStackDeployment} from "../lib/cf";
+import process from "process";
+
+const {
+    INSTANCE_PROFILE_NAME,
+    BUCKET_NAME
+} = process.env;
 
 const dispatchStateMachineArn = process.env.DISPATCH_SF_ARN || "";
 const requestStateMachineArn = process.env.REQUEST_SF_ARN || "";
@@ -23,6 +29,14 @@ export const handler = ApiHandler(async (_evt) => {
 
     if (!task.taskName) {
         return jsonResponse({msg: "taskName is empty"}, 400);
+    }
+
+    if (!task.compute) {
+        return jsonResponse({msg: "compute is empty"}, 400);
+    }
+
+    if (task.compute !== "EC2" && task.compute !== "Lambda") {
+        return jsonResponse({msg: "compute must be Lambda or EC2"}, 400);
     }
 
     if (!task.taskType) {
@@ -143,7 +157,7 @@ export const handler = ApiHandler(async (_evt) => {
 
     try {
         const start = Date.now();
-        const states = await dispatchRegions(task);
+        const states = task.compute === "Lambda" ? await dispatchRegionsLambda(task) : await dispatchRegionsEc2(task);
         const end = Date.now();
 
         return jsonResponse({
@@ -158,7 +172,7 @@ export const handler = ApiHandler(async (_evt) => {
 
 });
 
-export async function dispatchRegions(task: Task) {
+async function dispatchRegionsLambda(task: Task) {
     let statesList: StatesList = {};
 
     for (const region of task.regions) {
@@ -217,4 +231,115 @@ export async function dispatchRegions(task: Task) {
     }
 
     return statesList;
+}
+
+async function dispatchRegionsEc2(task: Task) {
+
+    for (const region of task.regions) {
+
+        task.region = region;
+
+        if (task.n && task.c) {
+            await createInstance(task, region, task.c);
+        } else {
+            await createInstance(task, region);
+        }
+
+    }
+
+    return [];
+}
+
+async function createInstance(task: Task, region: string, MaxCount: number = 1) {
+    let request_count = task.n;
+
+    if (task.qps) {
+        request_count = task.qps;
+    }
+
+    if (task.n && task.c) {
+        request_count = Math.ceil(task.n / task.c);
+    }
+
+    const ec2 = new AWS.EC2({apiVersion: '2016-11-15', region});
+
+    const qpsScript = `#!/bin/bash
+
+url="${task.url}"
+start_time=1638326400
+end_time=1638330000
+request_count=${request_count}
+taskId=${task.taskId}
+logfile=/tmp/log.${task.taskId}.txt
+BUCKET_NAME=${BUCKET_NAME}
+current_time=$(date +%s)
+
+while (( current_time < start_time )); do
+  sleep 1
+  current_time=$(date +%s)
+done
+
+while (( current_time <= end_time )); do
+
+  for (( i=0; i<request_count; i++ )); do
+    (curl -o /dev/null -s $url -w "%{time_total}\n" >> $logfile) &
+  done
+
+  sleep 1
+
+  current_time=$(date +%s)
+done
+
+aws s3 cp $logfile s3://$BUCKET_NAME/$logfile
+
+TOKEN='curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"'
+INSTANCE_ID='curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/instance-id'
+aws ec2 terminate-instances --instance-ids $INSTANCE_ID
+`;
+
+    const batchscript = `#!/bin/bash
+
+url="${task.url}"
+start_time=1638326400
+request_count=${request_count}
+taskId=${task.taskId}
+logfile=/tmp/log.${task.taskId}.txt
+BUCKET_NAME=${BUCKET_NAME}
+current_time=$(date +%s)
+
+while (( current_time < start_time )); do
+  sleep 1
+  current_time=$(date +%s)
+done
+
+for (( i=0; i<request_count; i++ )); do
+  curl -o /dev/null -s $url -w "%{time_total}\\n" >> $logfile
+done
+
+aws s3 cp $logfile s3://$BUCKET_NAME/$logfile
+
+TOKEN='curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"'
+INSTANCE_ID='curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/instance-id'
+aws ec2 terminate-instances --instance-ids $INSTANCE_ID
+`;
+
+    // cd /var/lib/cloud/instance/scripts/
+    // cat /tmp/log*
+    // sudo cat /var/log/cloud-init-output.log
+
+    const bootScript = task.qps ? qpsScript : batchscript;
+
+    const runInstanceParams: EC2.Types.RunInstancesRequest = {
+        ImageId: 'ami-0b94777c7d8bfe7e3',
+        InstanceType: 't2.micro',
+        MinCount: 1,
+        MaxCount: 1,
+        KeyName: 'mac',
+        UserData: Buffer.from(bootScript).toString('base64'),
+        IamInstanceProfile: {
+            Name: INSTANCE_PROFILE_NAME,
+        }
+    };
+
+    await ec2.runInstances(runInstanceParams).promise();
 }

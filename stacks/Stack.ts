@@ -1,10 +1,24 @@
-import {Api, EventBus, Function, StackContext, Table, Topic} from "sst/constructs";
-import {ddbUrl, lambdaUrl, sfUrl, stackUrl, topicUrl} from "sst-helper";
+import {Api, Bucket, EventBus, Function, StackContext, Table, Topic} from "sst/constructs";
+import {bucketUrl, ddbUrl, lambdaUrl, sfUrl, stackUrl, topicUrl} from "sst-helper";
 import {Choice, Condition, JsonPath, Pass, StateMachine, TaskInput} from 'aws-cdk-lib/aws-stepfunctions';
 import {LambdaInvoke} from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as events from "aws-cdk-lib/aws-events";
+import {CfnInstanceProfile, ManagedPolicy, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 
 export function Stack({stack}: StackContext) {
+
+    const ec2Role = new Role(stack, "ec2Role", {
+        assumedBy: new ServicePrincipal("ec2.amazonaws.com"),
+        managedPolicies: [
+            ManagedPolicy.fromAwsManagedPolicyName("AmazonS3FullAccess"),
+            ManagedPolicy.fromAwsManagedPolicyName("AmazonEC2FullAccess"),
+        ]
+    });
+
+    const ec2InstanceProfile = new CfnInstanceProfile(stack, "ec2InstanceProfile", {
+        roles: [ec2Role.roleName],
+        instanceProfileName: "ec2InstanceProfile"
+    });
 
     const taskTable = new Table(stack, "tasks", {
         fields: {
@@ -12,6 +26,8 @@ export function Stack({stack}: StackContext) {
         },
         primaryIndex: {partitionKey: "taskId"},
     });
+
+    const bucket = new Bucket(stack, "bucket");
 
     const logsTable = new Table(stack, "logs", {
         fields: {
@@ -105,13 +121,19 @@ export function Stack({stack}: StackContext) {
 
     const taskCreateFunction = new Function(stack, "taskCreateFunction", {
         handler: "packages/functions/src/tasks/create.handler",
-        permissions: ['states:StartExecution', 'dynamodb:PutItem', 'ec2:describeRegions', 'cloudformation:DescribeStacks'],
+        permissions: [
+            'states:StartExecution', 'dynamodb:PutItem', 'ec2:describeRegions', 'cloudformation:DescribeStacks',
+            'ec2:*',
+            'iam:*'
+        ],
         memorySize: 2048,
         bind: [taskTable],
         environment: {
             DISPATCH_SF_ARN: dispatchStateMachine.stateMachineArn,
             REQUEST_SF_ARN: requestStateMachine.stateMachineArn,
-        }
+            INSTANCE_PROFILE_NAME: ec2InstanceProfile.instanceProfileName || "",
+            BUCKET_NAME: bucket.bucketName,
+        },
     });
 
     const taskListFunction = new Function(stack, "taskListFunction", {
@@ -182,6 +204,7 @@ export function Stack({stack}: StackContext) {
         ApiEndpoint: api.url,
         stack: stackUrl(stack.stackId, stack.region),
         taskTable: ddbUrl(taskTable.tableName, stack.region),
+        bucket: bucketUrl(bucket.bucketName, stack.region),
         logsTable: ddbUrl(logsTable.tableName, stack.region),
         ipTable: ddbUrl(ipTable.tableName, stack.region),
         topic: topicUrl(topic.topicArn, stack.region),

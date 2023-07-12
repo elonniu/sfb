@@ -22,6 +22,7 @@ export interface Task {
     taskStep?: number;
     url: string;
     method: "GET" | "POST" | "PUT" | string;
+    compute: "Lambda" | "EC2" | string;
     qps?: number;
     n?: number;
     c?: number;
