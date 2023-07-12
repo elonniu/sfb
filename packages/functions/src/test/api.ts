@@ -25,15 +25,9 @@ export const handler = ApiHandler(async (_evt) => {
         ReturnValues: 'UPDATED_NEW'
     };
 
-    dynamodb.update(params, function (err, data) {
-        if (err) {
-            console.error("Error", err);
-        } else {
-            console.log("Success", data);
-        }
-    });
+    const data = await dynamodb.update(params).promise();
 
-    return jsonResponse({message: "ok"});
+    return jsonResponse({message: "ok", data});
 
     // try {
     //     const getParams = {
