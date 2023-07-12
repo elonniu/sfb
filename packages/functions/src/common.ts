@@ -5,6 +5,11 @@ export interface StatesList {
     [key: string]: Execution[];
 }
 
+export interface Ec2Status {
+    InstanceId: string;
+    Status: string;
+}
+
 export interface Execution {
     executionArn: Arn;
     startDate: string;

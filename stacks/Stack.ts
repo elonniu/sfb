@@ -163,8 +163,13 @@ export function Stack({stack}: StackContext) {
         memorySize: 2048,
     });
 
-    const sfStatusChangeLambda = new Function(stack, "lambda", {
+    const sfStatusChangeLambda = new Function(stack, "sfStatusChange", {
         handler: "packages/functions/src/eda/sfStatus.handler",
+        bind: [taskTable]
+    });
+
+    const ec2StatusChangeLambda = new Function(stack, "ec2StatusChange", {
+        handler: "packages/functions/src/eda/ec2Status.handler",
         bind: [taskTable]
     });
 
@@ -173,13 +178,22 @@ export function Stack({stack}: StackContext) {
             eventBus: events.EventBus.fromEventBusName(stack, "ImportedBus", "default"),
         },
         rules: {
-            myRule: {
+            stepFunctions: {
                 pattern: {
                     source: ["aws.states"],
                     detailType: ["Step Functions Execution Status Change"]
                 },
                 targets: {
                     myTarget1: sfStatusChangeLambda,
+                },
+            },
+            ec2: {
+                pattern: {
+                    source: ["aws.ec2"],
+                    detailType: ["EC2 Instance State-change Notification"],
+                },
+                targets: {
+                    myTarget1: ec2StatusChangeLambda,
                 },
             },
         },
