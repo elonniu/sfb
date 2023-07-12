@@ -28,6 +28,7 @@ export interface Task {
     qps?: number;
     n?: number;
     c?: number;
+    taskDelay?: number;
     regions: string[];
     region: string;
     perStateMachineExecuted?: number,

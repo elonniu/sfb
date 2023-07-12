@@ -128,7 +128,11 @@ export const handler = ApiHandler(async (_evt) => {
         }
         task.startTime = new Date(new Date(task.startTime).getTime()).toISOString();
     } else {
-        task.startTime = new Date().toISOString();
+        if (task.taskDelay) {
+            task.startTime = new Date(new Date().getTime() + task.taskDelay * 1000).toISOString();
+        } else {
+            task.startTime = new Date().toISOString();
+        }
     }
 
     if (task.endTime) {
