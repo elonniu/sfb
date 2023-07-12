@@ -17,7 +17,7 @@ export function Stack({stack}: StackContext) {
 
     const ec2InstanceProfile = new CfnInstanceProfile(stack, "ec2InstanceProfile", {
         roles: [ec2Role.roleName],
-        instanceProfileName: "ec2InstanceProfile"
+        instanceProfileName: `${stack.stackName}-ec2InstanceProfile`
     });
 
     const taskTable = new Table(stack, "tasks", {
