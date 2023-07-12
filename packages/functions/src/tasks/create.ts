@@ -1,6 +1,6 @@
 import {ApiHandler} from "sst/node/api";
 import {executionUrl, jsonResponse} from "sst-helper";
-import AWS, {EC2} from "aws-sdk";
+import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {v4 as uuidv4} from "uuid";
 import {StatesList, Task} from "../common";
@@ -9,6 +9,8 @@ import {Table} from "sst/node/table";
 import {startExecutionBatch} from "../lib/sf";
 import {checkStackDeployment} from "../lib/cf";
 import process from "process";
+import {RunInstancesRequest} from "aws-sdk/clients/ec2";
+import {runInstances} from "../lib/ec2";
 
 const {
     INSTANCE_PROFILE_NAME,
@@ -37,6 +39,14 @@ export const handler = ApiHandler(async (_evt) => {
 
     if (task.compute !== "EC2" && task.compute !== "Lambda") {
         return jsonResponse({msg: "compute must be Lambda or EC2"}, 400);
+    }
+
+    if (task.compute === "EC2" && !task.KeyName) {
+        return jsonResponse({msg: "KeyName must be set when compute is EC2"}, 400);
+    }
+
+    if (task.compute === "EC2" && !task.InstanceType) {
+        task.InstanceType = 't2.micro';
     }
 
     if (!task.taskType) {
@@ -161,7 +171,7 @@ export const handler = ApiHandler(async (_evt) => {
         const end = Date.now();
 
         return jsonResponse({
-            latency: Number(end.toString()) - Number(start.toString()),
+            createTaskLatency: Number(end.toString()) - Number(start.toString()),
             ...task,
             states,
             nPerInstance: (task.n && task.c) ? Math.ceil(task.n / task.c) : undefined,
@@ -271,10 +281,6 @@ async function dispatchRegionsEc2(task: Task) {
 async function createInstances(task: Task, region: string, MaxCount: number) {
     let request_count = task.n;
 
-    if (task.qps) {
-        request_count = task.qps;
-    }
-
     if (task.n && task.c) {
         request_count = Math.ceil(task.n / task.c);
     }
@@ -282,14 +288,15 @@ async function createInstances(task: Task, region: string, MaxCount: number) {
     const start_time = Math.round(new Date(task.startTime).getTime() / 1000);
     const end_time = Math.round(new Date(task.endTime).getTime() / 1000);
 
-    const ec2 = new AWS.EC2({apiVersion: '2016-11-15', region});
+    const shell = String.raw;
 
-    const qpsScript = `#!/bin/bash
+    const bootScript = shell`#!/bin/bash
 
 url="${task.url}"
 start_time=${start_time}
 end_time=${end_time}
 request_count=${request_count}
+qps=${task.qps}
 taskId=${task.taskId}
 logfile=/tmp/log.${task.taskId}.txt
 BUCKET_NAME=${BUCKET_NAME}
@@ -300,43 +307,20 @@ while (( current_time < start_time )); do
   current_time=$(date +%s)
 done
 
-while (( current_time <= end_time )); do
-
+if [[ -z "$qps" || ! $qps =~ ^[0-9]+$ ]]
+then
   for (( i=0; i<request_count; i++ )); do
+    curl -o /dev/null -s $url -w "%{time_total}\\n" >> $logfile
+  done
+else
+  while (( current_time <= end_time )); do
+  for (( i=0; i<qps; i++ )); do
     (curl -o /dev/null -s $url -w "%{time_total}\n" >> $logfile) &
   done
-
-  sleep 1
-
-  current_time=$(date +%s)
-done
-
-aws s3 cp $logfile s3://$BUCKET_NAME/$logfile
-
-TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/instance-id)
-aws ec2 terminate-instances --instance-ids $INSTANCE_ID
-`;
-
-    const batchscript = `#!/bin/bash
-
-url="${task.url}"
-start_time=${start_time}
-end_time=${end_time}
-request_count=${request_count}
-taskId=${task.taskId}
-logfile=/tmp/log.${task.taskId}.txt
-BUCKET_NAME=${BUCKET_NAME}
-current_time=$(date +%s)
-
-while (( current_time < start_time )); do
   sleep 1
   current_time=$(date +%s)
-done
-
-for (( i=0; i<request_count; i++ )); do
-  curl -o /dev/null -s $url -w "%{time_total}\\n" >> $logfile
-done
+  done
+fi
 
 aws s3 cp $logfile s3://$BUCKET_NAME/$logfile
 
@@ -349,63 +333,17 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
     // cat /tmp/log*
     // sudo cat /var/log/cloud-init-output.log
 
-    const bootScript = task.qps ? qpsScript : batchscript;
-
-    const runBatch = 20;
-
-    let InstanceIds: string[] = [];
-
-    if (MaxCount <= runBatch) {
-        const runInstanceParams: EC2.Types.RunInstancesRequest = {
-            ImageId: 'ami-0b94777c7d8bfe7e3',
-            InstanceType: 't2.micro',
-            MinCount: 1,
-            MaxCount: MaxCount,
-            KeyName: 'mac',
-            UserData: Buffer.from(bootScript).toString('base64'),
-            IamInstanceProfile: {
-                Name: INSTANCE_PROFILE_NAME,
-            }
-        };
-
-        const result = await ec2.runInstances(runInstanceParams).promise();
-        result.Instances?.forEach((instance) => {
-            if (instance.InstanceId) {
-                InstanceIds.push(instance.InstanceId);
-            }
-        });
-
-
-    } else {
-
-        while (MaxCount > 0) {
-            let subtracted = (MaxCount >= runBatch) ? runBatch : MaxCount;
-
-            const runInstanceParams: EC2.Types.RunInstancesRequest = {
-                ImageId: 'ami-0b94777c7d8bfe7e3',
-                InstanceType: 't2.micro',
-                MinCount: 1,
-                MaxCount: subtracted,
-                KeyName: 'mac',
-                UserData: Buffer.from(bootScript).toString('base64'),
-                IamInstanceProfile: {
-                    Name: INSTANCE_PROFILE_NAME,
-                }
-            };
-
-            const result = await ec2.runInstances(runInstanceParams).promise();
-            result.Instances?.forEach((instance) => {
-                if (instance.InstanceId) {
-                    InstanceIds.push(instance.InstanceId);
-                }
-            });
-
-            MaxCount -= subtracted;
+    const runInstanceParams: RunInstancesRequest = {
+        ImageId: 'ami-0b94777c7d8bfe7e3',
+        InstanceType: task.InstanceType,
+        MinCount: 1,
+        MaxCount: 1,
+        KeyName: task.KeyName,
+        UserData: Buffer.from(bootScript).toString('base64'),
+        IamInstanceProfile: {
+            Name: INSTANCE_PROFILE_NAME,
         }
+    };
 
-
-    }
-
-    return InstanceIds;
-
+    return await runInstances(region, runInstanceParams, MaxCount);
 }

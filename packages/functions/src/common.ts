@@ -23,6 +23,8 @@ export interface Task {
     url: string;
     method: "GET" | "POST" | "PUT" | string;
     compute: "Lambda" | "EC2" | string;
+    KeyName?: string;
+    InstanceType?: string;
     qps?: number;
     n?: number;
     c?: number;
