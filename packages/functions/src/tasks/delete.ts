@@ -4,6 +4,7 @@ import AWS from "aws-sdk";
 import {Table} from "sst/node/table";
 import {batchDelete, batchGet} from "../lib/ddb";
 import {batchStop} from "../lib/sf";
+import {batchStopEc2} from "../lib/ec2";
 
 const TableName = Table.tasks.tableName;
 const current_region = process.env.AWS_REGION || "";
@@ -44,6 +45,9 @@ export const handler = ApiHandler(async (_evt) => {
                             executionArn: state.executionArn
                         });
                     }
+                }
+                if (current && current.ec2Instances) {
+                    await batchStopEc2(current.ec2Instances, current.region);
                 }
             }
             await batchStop(listStop);

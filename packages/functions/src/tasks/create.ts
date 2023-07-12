@@ -371,16 +371,15 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
 
 
     } else {
-        // get MaxCount / 10
-        const count = Math.ceil(MaxCount / runBatch);
 
-        // for count
-        for (let i = 0; i < count; i++) {
+        while (MaxCount > 0) {
+            let subtracted = (MaxCount >= runBatch) ? runBatch : MaxCount;
+
             const runInstanceParams: EC2.Types.RunInstancesRequest = {
                 ImageId: 'ami-0b94777c7d8bfe7e3',
                 InstanceType: 't2.micro',
                 MinCount: 1,
-                MaxCount: runBatch,
+                MaxCount: subtracted,
                 KeyName: 'mac',
                 UserData: Buffer.from(bootScript).toString('base64'),
                 IamInstanceProfile: {
@@ -394,7 +393,11 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
                     InstanceIds.push(instance.InstanceId);
                 }
             });
+
+            MaxCount -= subtracted;
         }
+
+
     }
 
     return InstanceIds;

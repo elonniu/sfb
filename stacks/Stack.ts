@@ -145,14 +145,14 @@ export function Stack({stack}: StackContext) {
 
     const taskAbortFunction = new Function(stack, "taskAbortFunction", {
         handler: "packages/functions/src/tasks/abort.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem'],
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem', 'ec2:terminateInstances'],
         memorySize: 2048,
         bind: [taskTable]
     });
 
     const taskDeleteFunction = new Function(stack, "taskDeleteFunction", {
         handler: "packages/functions/src/tasks/delete.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem'],
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances'],
         memorySize: 2048,
         bind: [taskTable]
     });
