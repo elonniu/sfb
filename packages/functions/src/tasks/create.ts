@@ -307,7 +307,7 @@ BUCKET_NAME=${BUCKET_NAME}
 current_time=$(date +%s)
 
 while (( current_time < start_time )); do
-  sleep 1
+  sleep 0.2
   current_time=$(date +%s)
 done
 
