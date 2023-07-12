@@ -199,17 +199,22 @@ async function dispatchRegionsLambda(task: Task) {
                 });
             }
         } else {
-            sfExe.push({
-                name: `${task.qps ? 'qps' : 'batch'}_${task.taskName}_${task.taskId}`,
-                stateMachineArn: dispatchStateMachineArn.replace(current_region, region),
-                input: JSON.stringify({
-                    Payload: {
-                        ...task,
-                        taskClient: 0,
-                        shouldEnd: false,
-                    },
-                }),
-            });
+            const c = task.c ? task.c : 1;
+
+            for (let i = 0; i < c; i++) {
+                sfExe.push({
+                    name: `${task.qps ? 'qps' : 'batch'}_${task.taskName}_${task.taskId}`,
+                    stateMachineArn: dispatchStateMachineArn.replace(current_region, region),
+                    input: JSON.stringify({
+                        Payload: {
+                            ...task,
+                            taskClient: c,
+                            shouldEnd: false,
+                        },
+                    }),
+                });
+            }
+
         }
         const states = await startExecutionBatch(region, sfExe);
 
@@ -244,7 +249,7 @@ async function dispatchRegionsEc2(task: Task) {
         if (task.n && task.c) {
             ec2Instances = await createInstances(task, region, task.c);
         } else {
-            ec2Instances = await createInstances(task, region);
+            ec2Instances = await createInstances(task, region, task.c ? task.c : 1);
         }
 
         const dynamodb = new AWS.DynamoDB.DocumentClient({region});
@@ -262,7 +267,7 @@ async function dispatchRegionsEc2(task: Task) {
     return ec2Instances;
 }
 
-async function createInstances(task: Task, region: string, MaxCount: number = 1) {
+async function createInstances(task: Task, region: string, MaxCount: number) {
     let request_count = task.n;
 
     if (task.qps) {
