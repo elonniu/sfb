@@ -34,6 +34,7 @@ export interface Task {
     n?: number;
     c?: number;
     taskDelaySeconds?: number;
+    runInstanceBatch?: number;
     regions: string[];
     region: string;
     perStateMachineExecuted?: number,

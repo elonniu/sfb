@@ -46,9 +46,7 @@ export const handler = ApiHandler(async (_evt) => {
                         });
                     }
                 }
-                if (current && current.ec2Instances) {
-                    await batchStopEc2(current.ec2Instances, current.region);
-                }
+                await batchStopEc2(current);
             }
             await batchStop(listStop);
         }

@@ -7,7 +7,7 @@ import {StatesList, Task} from "../common";
 import {HttpStatusCode} from "axios";
 import {Table} from "sst/node/table";
 import {startExecutionBatch} from "../lib/sf";
-import {checkStackDeployment} from "../lib/cf";
+import {checkStackDeployment, SST_APP, SST_STAGE} from "../lib/cf";
 import process from "process";
 import {RunInstancesRequest} from "aws-sdk/clients/ec2";
 import {runInstances} from "../lib/ec2";
@@ -41,13 +41,19 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "compute must be Lambda or EC2"}, 400);
     }
 
-    if (task.compute === "EC2" && !task.KeyName) {
-        return jsonResponse({msg: "KeyName must be set when compute is EC2"}, 400);
+
+    if (task.compute === "EC2") {
+
+        if (!task.KeyName) {
+            return jsonResponse({msg: "KeyName must be set when compute is EC2"}, 400);
+        }
+
+        if (!task.InstanceType) {
+            task.InstanceType = 't2.micro';
+        }
+
     }
 
-    if (task.compute === "EC2" && !task.InstanceType) {
-        task.InstanceType = 't2.micro';
-    }
 
     if (!task.taskType) {
         return jsonResponse({msg: "taskType is empty"}, 400);
@@ -283,11 +289,7 @@ async function dispatchRegionsEc2(task: Task) {
 }
 
 async function createInstances(task: Task, region: string, MaxCount: number) {
-    let request_count = task.n;
-
-    if (task.n && task.c) {
-        request_count = Math.ceil(task.n / task.c);
-    }
+    const request_count = (task.n && task.c) ? Math.ceil(task.n / task.c) : task.n;
 
     const start_time = Math.round(new Date(task.startTime).getTime() / 1000);
     const end_time = Math.round(new Date(task.endTime).getTime() / 1000);
@@ -306,30 +308,33 @@ logfile=/tmp/log.${task.taskId}.txt
 BUCKET_NAME=${BUCKET_NAME}
 current_time=$(date +%s)
 
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/instance-id)
+
 while (( current_time < start_time )); do
-  sleep 0.2
+  sleep 0.1
   current_time=$(date +%s)
 done
 
 if [[ -z "$qps" || ! $qps =~ ^[0-9]+$ ]]
 then
   for (( i=0; i<request_count; i++ )); do
-    curl -o /dev/null -s $url -w "%{time_total}\\n" >> $logfile
+    get_utc_time=$(date -u '+%Y-%m-%dT%H:%M:%S.%3NZ')
+    curl -o /dev/null -s $url -w "$taskId $INSTANCE_ID $get_utc_time %{http_code} %{time_total}\\n" >> $logfile
   done
 else
   while (( current_time <= end_time )); do
   for (( i=0; i<qps; i++ )); do
-    (curl -o /dev/null -s $url -w "%{time_total}\n" >> $logfile) &
+    get_utc_time=$(date -u '+%Y-%m-%dT%H:%M:%S.%3NZ')
+    (curl -o /dev/null -s $url -w "$taskId $INSTANCE_ID $get_utc_time %{http_code} %{time_total}\n" >> $logfile) &
   done
   sleep 1
   current_time=$(date +%s)
   done
 fi
 
-aws s3 cp $logfile s3://$BUCKET_NAME/$logfile
+aws s3 cp $logfile s3://$BUCKET_NAME/tasks/$(date '+%Y-%m-%d')/$taskId/$INSTANCE_ID.txt
 
-TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/instance-id)
 aws ec2 terminate-instances --instance-ids $INSTANCE_ID
 `;
 
@@ -353,7 +358,7 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
                 Tags: [
                     {
                         Key: "Name",
-                        Value: `serverless-bench-${task.taskName}`
+                        Value: `${SST_APP}-${SST_STAGE}-${task.taskName}`
                     },
                     {
                         Key: "TaskId",
@@ -364,5 +369,5 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
         ]
     };
 
-    return await runInstances(region, runInstanceParams, MaxCount);
+    return await runInstances(task, region, runInstanceParams, MaxCount);
 }

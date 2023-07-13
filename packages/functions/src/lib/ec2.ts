@@ -1,12 +1,16 @@
 import AWS from "aws-sdk";
 import {RunInstancesRequest} from "aws-sdk/clients/ec2";
+import {Task} from "../common";
 
-export async function batchStopEc2(InstanceIds: string[], region: string) {
+export async function batchStopEc2(task: any) {
+    if (!task.ec2Instances) {
+        return;
+    }
+    const InstanceIds = Object.keys(task.ec2Instances);
     try {
-        const ec2 = new AWS.EC2({apiVersion: '2016-11-15', region});
+        const ec2 = new AWS.EC2({apiVersion: '2016-11-15', region: task.regions});
         await ec2.terminateInstances({InstanceIds}).promise();
     } catch (error: any) {
-
     }
 }
 
@@ -48,13 +52,15 @@ export async function runInstancesBatch(region: string, items: RunInstancesReque
 }
 
 
-export async function runInstances(region: string, item: RunInstancesRequest, MaxCount: number) {
+export async function runInstances(task: Task, region: string, item: RunInstancesRequest, MaxCount: number) {
 
-    const runBatch = 20;
+    if (!task.runInstanceBatch) {
+        task.runInstanceBatch = 20;
+    }
 
     let InstanceIds = {};
 
-    if (MaxCount <= runBatch) {
+    if (MaxCount <= task.runInstanceBatch) {
 
         const runInstanceParams: RunInstancesRequest = {
             ...item,
@@ -68,7 +74,7 @@ export async function runInstances(region: string, item: RunInstancesRequest, Ma
         let runInstanceParamsList: RunInstancesRequest[] = [];
 
         while (MaxCount > 0) {
-            let subtracted = (MaxCount >= runBatch) ? runBatch : MaxCount;
+            let subtracted = (MaxCount >= task.runInstanceBatch) ? task.runInstanceBatch : MaxCount;
             runInstanceParamsList.push({
                 ...item,
                 MaxCount: subtracted,
