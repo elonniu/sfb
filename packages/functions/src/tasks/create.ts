@@ -358,7 +358,7 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
                 Tags: [
                     {
                         Key: "Name",
-                        Value: `${SST_APP}-${SST_STAGE}-${task.taskName}`
+                        Value: `${SST_APP}-${SST_STAGE}-${task.taskName}-${task.qps ? 'qps' : 'batch'}`
                     },
                     {
                         Key: "TaskId",
