@@ -16,4 +16,5 @@ node_modules
 .idea
 .sst.*
 cdk.context.json
-/packages/job/target/
+/resources/job/target/
+.sst.config.*.mjs

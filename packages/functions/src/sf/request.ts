@@ -15,11 +15,10 @@ export async function handler(event: any) {
     const task: Task = input.value;
     const invokeStart = new Date().toISOString();
 
-    console.log(JSON.stringify({ExecutionId, input}));
-
     task.taskStep = task.taskStep ? task.taskStep++ : 1;
 
     let checkStepFunctionsCounter = 0;
+
     while (true) {
         if (new Date().getTime() > new Date(invokeStart).getTime() + 898 * 1000) {
             return {...task, shouldEnd: false};
@@ -62,7 +61,7 @@ export async function handler(event: any) {
 
 }
 
-export async function requestBatch(task: Task, batch: number = 1) {
+async function requestBatch(task: Task, batch: number = 1) {
     const list = [];
 
     for (let i = 0; i < batch; i++) {

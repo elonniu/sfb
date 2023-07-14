@@ -1,4 +1,4 @@
-import {Task, updateStateStatus} from "../common";
+import {Task, updateTaskState} from "../common";
 
 export async function handler(event: any) {
 
@@ -11,7 +11,7 @@ export async function handler(event: any) {
                 if (env.name === "TASK") {
                     const task = JSON.parse(env.value) as Task;
 
-                    await updateStateStatus(task.taskId, taskArn, lastStatus);
+                    await updateTaskState(task.taskId, taskArn, lastStatus);
 
                 }
             }

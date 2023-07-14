@@ -1,4 +1,4 @@
-import {Task, updateStateStatus} from "../common";
+import {Task, updateTaskState} from "../common";
 
 export async function handler(event: any) {
 
@@ -8,7 +8,7 @@ export async function handler(event: any) {
 
     const task: Task = Payload;
 
-    await updateStateStatus(task.taskId, executionArn, status);
+    await updateTaskState(task.taskId, executionArn, status);
 
     return {};
 }

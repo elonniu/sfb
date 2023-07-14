@@ -184,15 +184,16 @@ export function Stack({stack}: StackContext) {
         definition: checkDispatchShouldEnd,
     });
 
-    const requesterFunction = new Function(stack, "requesterFunction", {
-        functionName: `${stack.stackName}-requesterFunction`,
-        handler: "packages/functions/src/eda/requester.handler",
-        memorySize: 1024,
+    const taskFunction = new Function(stack, "taskFunction", {
+        functionName: `${stack.stackName}-taskFunction`,
+        handler: "resources/golang/main.go",
+        runtime: "go1.x",
+        architecture: "x86_64",
     });
 
     const topic = new Topic(stack, "Topic", {
         subscribers: {
-            subscriber1: requesterFunction,
+            subscriber1: taskFunction,
         },
     });
 
@@ -280,7 +281,7 @@ export function Stack({stack}: StackContext) {
     const taskAbortFunction = new Function(stack, "taskAbortFunction", {
         functionName: `${stack.stackName}-taskAbortFunction`,
         handler: "packages/functions/src/tasks/abort.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem', 'ec2:terminateInstances', 'ecs:stopTask'],
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem', 'ec2:terminateInstances', 'ecs:stopTask', 'batch:terminateJob'],
         memorySize: 2048,
         bind: [taskTable],
         environment: {
@@ -291,7 +292,7 @@ export function Stack({stack}: StackContext) {
     const taskDeleteFunction = new Function(stack, "taskDeleteFunction", {
         functionName: `${stack.stackName}-taskDeleteFunction`,
         handler: "packages/functions/src/tasks/delete.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances', 'ecs:stopTask'],
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances', 'ecs:stopTask', 'batch:terminateJob'],
         memorySize: 2048,
         bind: [taskTable],
         environment: {
@@ -306,15 +307,15 @@ export function Stack({stack}: StackContext) {
         memorySize: 2048,
     });
 
-    const sfStatusChangeLambda = new Function(stack, "sfStatusChange", {
-        functionName: `${stack.stackName}-sfStatusChange`,
-        handler: "packages/functions/src/eda/sfStatusChange.handler",
+    const sfStateChangeLambda = new Function(stack, "sfStateChange", {
+        functionName: `${stack.stackName}-sfStateChange`,
+        handler: "packages/functions/src/eda/sfStateChange.handler",
         bind: [taskTable]
     });
 
-    const fargateStatusChangeLambda = new Function(stack, "fargateStatusChange", {
-        functionName: `${stack.stackName}-fargateStatusChange`,
-        handler: "packages/functions/src/eda/fargateStatusChange.handler",
+    const fargateStateChangeLambda = new Function(stack, "fargateStateChange", {
+        functionName: `${stack.stackName}-fargateStateChange`,
+        handler: "packages/functions/src/eda/fargateStateChange.handler",
         bind: [taskTable]
     });
 
@@ -324,9 +325,9 @@ export function Stack({stack}: StackContext) {
         bind: [taskTable]
     });
 
-    const ec2StatusChangeLambda = new Function(stack, "ec2StatusChange", {
-        functionName: `${stack.stackName}-ec2StatusChange`,
-        handler: "packages/functions/src/eda/ec2StatusChange.handler",
+    const ec2StateChangeLambda = new Function(stack, "ec2StateChange", {
+        functionName: `${stack.stackName}-ec2StateChange`,
+        handler: "packages/functions/src/eda/ec2StateChange.handler",
         bind: [taskTable],
         permissions: ["ec2:describeTags"]
     });
@@ -345,7 +346,7 @@ export function Stack({stack}: StackContext) {
                     }
                 },
                 targets: {
-                    myTarget1: sfStatusChangeLambda,
+                    myTarget1: sfStateChangeLambda,
                 },
             },
             ecs: {
@@ -357,7 +358,7 @@ export function Stack({stack}: StackContext) {
                     }
                 },
                 targets: {
-                    myTarget1: fargateStatusChangeLambda,
+                    myTarget1: fargateStateChangeLambda,
                 },
             },
             batch: {
@@ -375,13 +376,13 @@ export function Stack({stack}: StackContext) {
                     detailType: ["EC2 Instance State-change Notification"],
                 },
                 targets: {
-                    myTarget1: ec2StatusChangeLambda,
+                    myTarget1: ec2StateChangeLambda,
                 },
             },
         },
     });
 
-    requesterFunction.bind([logsTable, topic]);
+    taskFunction.bind([logsTable, topic]);
     requestDispatchFunction.bind([topic]);
 
     const api = new Api(stack, "api", {
@@ -393,6 +394,7 @@ export function Stack({stack}: StackContext) {
             "DELETE /tasks/{id}": taskDeleteFunction,
             "PUT /tasks/{id}/abort": taskAbortFunction,
             "GET /api": apiFunction,
+            "GET /go": taskFunction,
         },
     });
 
@@ -407,7 +409,6 @@ export function Stack({stack}: StackContext) {
         stateMachine: sfUrl(dispatchStateMachine.stateMachineArn, stack.region),
         taskCreateFunction: lambdaUrl(taskCreateFunction.functionName, stack.region),
         requestDispatchFunction: lambdaUrl(requestDispatchFunction.functionName, stack.region),
-        requesterFunction: lambdaUrl(requesterFunction.functionName, stack.region),
         apiFunction: lambdaUrl(apiFunction.functionName, stack.region),
         RequestStateMachine: sfUrl(requestStateMachine.stateMachineArn, stack.region),
         SfRequestFunction: lambdaUrl(sfRequestFunction.functionName, stack.region),

@@ -53,11 +53,11 @@ export function delay(startSeconds: number) {
     }
 
     const waitingMs = 1000 - new Date().getMilliseconds();
-    console.log(JSON.stringify({
-        from: startSeconds,
-        to: startSeconds + 1,
-        waitingMs,
-    }));
+    // console.log(JSON.stringify({
+    //     from: startSeconds,
+    //     to: startSeconds + 1,
+    //     waitingMs,
+    // }));
     return new Promise(resolve => setTimeout(resolve, waitingMs));
 }
 
@@ -84,7 +84,7 @@ export async function getTaskGlobal(taskId: string, region: string) {
         : [task];
 }
 
-export async function updateStateStatus(taskId: string, arn: string, status: string) {
+export async function updateTaskState(taskId: string, arn: string, status: string) {
     const params = {
         TableName: Table.tasks.tableName,
         Key: {

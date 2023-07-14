@@ -2,12 +2,12 @@ import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {executionUrl} from "sst-helper";
 
-async function batchStopStepFunctionsByRegion(executionArn: string, region: string) {
+async function batchStopExecutionsByRegion(executionArn: string, region: string) {
     const stepFunctions = new AWS.StepFunctions({region});
     await stepFunctions.stopExecution({executionArn}).promise();
 }
 
-export async function batchStopStepFunctions(globalTasks: any[]) {
+export async function batchStopExecutions(globalTasks: any[]) {
 
 
     let listStop = [];
@@ -36,7 +36,7 @@ export async function batchStopStepFunctions(globalTasks: any[]) {
     let promises = [];
     for (let i = 0; i < listStop.length; i++) {
         const {executionArn, region} = listStop[i];
-        promises.push(batchStopStepFunctionsByRegion(executionArn, region));
+        promises.push(batchStopExecutionsByRegion(executionArn, region));
     }
     await Promise.all(promises);
 }

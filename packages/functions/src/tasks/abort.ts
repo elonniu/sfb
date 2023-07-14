@@ -1,9 +1,10 @@
 import {ApiHandler} from "sst/node/api";
 import {jsonResponse} from "sst-helper";
-import {batchStopStepFunctions} from "../lib/sf";
+import {batchStopExecutions} from "../lib/sf";
 import {batchStopEc2s} from "../lib/ec2";
-import {batchStopTasks} from "../lib/fargate";
+import {batchStopTasks} from "../lib/ecs";
 import {getTaskGlobal} from "../common";
+import {batchTerminateJobs} from "../lib/batch";
 
 const current_region = process.env.AWS_REGION || "";
 
@@ -16,11 +17,11 @@ export const handler = ApiHandler(async (_evt) => {
     try {
         const globalTasks = await getTaskGlobal(taskId, region);
 
-        // delete global tasks
         if (globalTasks) {
-            await batchStopTasks(globalTasks);
-            await batchStopStepFunctions(globalTasks);
             await batchStopEc2s(globalTasks);
+            await batchStopTasks(globalTasks);
+            await batchTerminateJobs(globalTasks);
+            await batchStopExecutions(globalTasks);
         }
 
         return jsonResponse({

@@ -12,7 +12,7 @@ import process from "process";
 import {RunInstancesRequest} from "aws-sdk/clients/ec2";
 import {runInstances} from "../lib/ec2";
 import {RunTaskRequest} from "aws-sdk/clients/ecs";
-import {runTasks} from "../lib/fargate";
+import {runTasks} from "../lib/ecs";
 import {SubmitJobRequest} from "aws-sdk/clients/batch";
 
 const {
