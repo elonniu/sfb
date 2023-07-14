@@ -24,6 +24,7 @@ export function Stack({stack}: StackContext) {
     const vpcSubnets = vpc.publicSubnets.map(subnet => subnet.subnetId);
 
     const securityGroup = new SecurityGroup(stack, "securityGroup", {
+        securityGroupName: `${stack.stackName}-securityGroup`,
         vpc,
         allowAllOutbound: true,
     });
@@ -35,6 +36,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const ecsTaskExecutionRole = new Role(stack, "ecsTaskExecutionRole", {
+        roleName: `${stack.stackName}-ecsTaskExecutionRole`,
         assumedBy: new ServicePrincipal("ecs-tasks.amazonaws.com"),
         managedPolicies: [
             ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"),
@@ -57,6 +59,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const batchRole = new Role(stack, 'batchRole', {
+        roleName: `${stack.stackName}-batchRole`,
         assumedBy: new ServicePrincipal('batch.amazonaws.com'),
     });
 
@@ -66,7 +69,7 @@ export function Stack({stack}: StackContext) {
     }));
 
     const batchComputeEnvironment = new batch.CfnComputeEnvironment(stack, 'computeEnvironment', {
-        // serviceRole: batchRole.roleArn,
+        computeEnvironmentName: `${stack.stackName}-compute-environment`,
         type: 'MANAGED',
         computeResources: {
             type: 'FARGATE',
@@ -77,16 +80,17 @@ export function Stack({stack}: StackContext) {
     });
 
     const jobQueue = new batch.CfnJobQueue(stack, 'JobQueue', {
+        jobQueueName: `${stack.stackName}-job-queue`,
         computeEnvironmentOrder: [{
             computeEnvironment: batchComputeEnvironment.ref,
             order: 1,
         }],
         priority: 1,
         state: 'ENABLED',
-        jobQueueName: 'BenchJobQueue',
     });
 
     const jobDefinition = new batch.CfnJobDefinition(stack, 'JobDefinition', {
+        jobDefinitionName: `${stack.stackName}-job-definition`,
         type: 'container',
         platformCapabilities: ['FARGATE'],
         containerProperties: {
@@ -111,6 +115,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const ec2Role = new Role(stack, "ec2Role", {
+        roleName: `${stack.stackName}-ec2Role`,
         assumedBy: new ServicePrincipal("ec2.amazonaws.com"),
         managedPolicies: [
             ManagedPolicy.fromAwsManagedPolicyName("AmazonS3FullAccess"),
@@ -123,7 +128,7 @@ export function Stack({stack}: StackContext) {
         instanceProfileName: `${stack.stackName}-ec2InstanceProfile`
     });
 
-    const bucket = new Bucket(stack, "bucket");
+    const bucket = new Bucket(stack, "bucket", {});
 
     const taskTable = new Table(stack, "tasks", {
         fields: {
@@ -147,11 +152,13 @@ export function Stack({stack}: StackContext) {
     });
 
     const apiFunction = new Function(stack, "apiFunction", {
+        functionName: `${stack.stackName}-apiFunction`,
         handler: "packages/functions/src/test/api.handler",
         bind: [logsTable, ipTable]
     });
 
     const requestDispatchFunction = new Function(stack, "requestDispatchFunction", {
+        functionName: `${stack.stackName}-requestDispatchFunction`,
         handler: "packages/functions/src/sf/requestDispatch.handler",
         permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData'],
         memorySize: 9999,
@@ -173,11 +180,12 @@ export function Stack({stack}: StackContext) {
     lambdaTask.next(checkDispatchShouldEnd);
 
     const dispatchStateMachine = new StateMachine(stack, 'DispatchStateMachine', {
-        definition: checkDispatchShouldEnd,
         stateMachineName: `${stack.stackName}-DispatchStateMachine`,
+        definition: checkDispatchShouldEnd,
     });
 
     const requesterFunction = new Function(stack, "requesterFunction", {
+        functionName: `${stack.stackName}-requesterFunction`,
         handler: "packages/functions/src/eda/requester.handler",
         memorySize: 1024,
     });
@@ -189,6 +197,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const sfRequestFunction = new Function(stack, "SfRequestFunction", {
+        functionName: `${stack.stackName}-sfRequestFunction`,
         handler: "packages/functions/src/sf/request.handler",
         memorySize: 4048,
         permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData'],
@@ -211,11 +220,12 @@ export function Stack({stack}: StackContext) {
     requestLambdaTask.next(checkRequestShouldEnd);
 
     const requestStateMachine = new StateMachine(stack, 'RequestStateMachine', {
-        definition: checkRequestShouldEnd,
         stateMachineName: `${stack.stackName}-RequestStateMachine`,
+        definition: checkRequestShouldEnd,
     });
 
     const taskGetFunction = new Function(stack, "taskGetFunction", {
+        functionName: `${stack.stackName}-taskGetFunction`,
         handler: "packages/functions/src/tasks/get.handler",
         permissions: ['dynamodb:GetItem'],
         memorySize: 2048,
@@ -223,6 +233,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const taskCreateFunction = new Function(stack, "taskCreateFunction", {
+        functionName: `${stack.stackName}-taskCreateFunction`,
         handler: "packages/functions/src/tasks/create.handler",
         permissions: [
             'states:StartExecution',
@@ -259,6 +270,7 @@ export function Stack({stack}: StackContext) {
     }) as any);
 
     const taskListFunction = new Function(stack, "taskListFunction", {
+        functionName: `${stack.stackName}-taskListFunction`,
         handler: "packages/functions/src/tasks/list.handler",
         permissions: ['dynamodb:Scan'],
         memorySize: 2048,
@@ -266,6 +278,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const taskAbortFunction = new Function(stack, "taskAbortFunction", {
+        functionName: `${stack.stackName}-taskAbortFunction`,
         handler: "packages/functions/src/tasks/abort.handler",
         permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem', 'ec2:terminateInstances', 'ecs:stopTask'],
         memorySize: 2048,
@@ -276,6 +289,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const taskDeleteFunction = new Function(stack, "taskDeleteFunction", {
+        functionName: `${stack.stackName}-taskDeleteFunction`,
         handler: "packages/functions/src/tasks/delete.handler",
         permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances', 'ecs:stopTask'],
         memorySize: 2048,
@@ -286,22 +300,26 @@ export function Stack({stack}: StackContext) {
     });
 
     const regionsFunction = new Function(stack, "regionsFunction", {
+        functionName: `${stack.stackName}-regionsFunction`,
         handler: "packages/functions/src/tasks/regions.handler",
         permissions: ['ec2:describeRegions', 'cloudformation:DescribeStacks'],
         memorySize: 2048,
     });
 
     const sfStatusChangeLambda = new Function(stack, "sfStatusChange", {
+        functionName: `${stack.stackName}-sfStatusChange`,
         handler: "packages/functions/src/eda/sfStatusChange.handler",
         bind: [taskTable]
     });
 
     const fargateStatusChangeLambda = new Function(stack, "fargateStatusChange", {
+        functionName: `${stack.stackName}-fargateStatusChange`,
         handler: "packages/functions/src/eda/fargateStatusChange.handler",
         bind: [taskTable]
     });
 
     const ec2StatusChangeLambda = new Function(stack, "ec2StatusChange", {
+        functionName: `${stack.stackName}-ec2StatusChange`,
         handler: "packages/functions/src/eda/ec2StatusChange.handler",
         bind: [taskTable],
         permissions: ["ec2:describeTags"]
