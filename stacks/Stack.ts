@@ -318,6 +318,12 @@ export function Stack({stack}: StackContext) {
         bind: [taskTable]
     });
 
+    const batchJobStateChangeLambda = new Function(stack, "batchJobStateChange", {
+        functionName: `${stack.stackName}-batchJobStateChange`,
+        handler: "packages/functions/src/eda/batchJobStateChange.handler",
+        bind: [taskTable]
+    });
+
     const ec2StatusChangeLambda = new Function(stack, "ec2StatusChange", {
         functionName: `${stack.stackName}-ec2StatusChange`,
         handler: "packages/functions/src/eda/ec2StatusChange.handler",
@@ -352,6 +358,15 @@ export function Stack({stack}: StackContext) {
                 },
                 targets: {
                     myTarget1: fargateStatusChangeLambda,
+                },
+            },
+            batch: {
+                pattern: {
+                    source: ["aws.batch"],
+                    detailType: ["Batch Job State Change"],
+                },
+                targets: {
+                    myTarget1: batchJobStateChangeLambda,
                 },
             },
             ec2: {

@@ -410,6 +410,9 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
 }
 
 async function createJobs(task: Task, region: string) {
+
+    let list = {};
+
     const batch = new AWS.Batch({region});
 
     const params: SubmitJobRequest = {
@@ -429,5 +432,13 @@ async function createJobs(task: Task, region: string) {
         }
     };
 
-    return await batch.submitJob(params).promise();
+    let res = await batch.submitJob(params).promise();
+
+    list[res.jobArn] = {
+        jobId: res.jobId,
+        jobName: res.jobName,
+        status: "WAITING"
+    }
+
+    return list;
 }

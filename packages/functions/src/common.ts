@@ -1,13 +1,11 @@
 import {HttpStatusCode} from "axios";
 import {Arn} from "aws-sdk/clients/stepfunctions";
+import {Table} from "sst/node/table";
+import AWS from "aws-sdk";
+import {batchGet} from "./lib/ddb";
 
 export interface StatesList {
     [key: string]: any;
-}
-
-export interface Ec2Status {
-    InstanceId: string;
-    Status: string;
 }
 
 export interface Execution {
@@ -61,4 +59,27 @@ export function delay(startSeconds: number) {
         waitingMs,
     }));
     return new Promise(resolve => setTimeout(resolve, waitingMs));
+}
+
+
+export async function getTaskGlobal(taskId: string, region: string) {
+    const TableName = Table.tasks.tableName;
+
+    const dynamodb = new AWS.DynamoDB.DocumentClient({region});
+    const data = await dynamodb.get({
+        TableName,
+        Key: {
+            taskId
+        }
+    } as any).promise();
+
+    if (!data.Item) {
+        throw new Error(`task ${taskId} not found`);
+    }
+
+    const task = data.Item;
+
+    return (task.regions && task.regions.length) > 1
+        ? await batchGet(TableName, {taskId}, task.regions)
+        : [task];
 }
