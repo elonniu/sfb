@@ -2,7 +2,7 @@ import {HttpStatusCode} from "axios";
 import {Arn} from "aws-sdk/clients/stepfunctions";
 
 export interface StatesList {
-    [key: string]: Execution[];
+    [key: string]: any;
 }
 
 export interface Ec2Status {
@@ -27,12 +27,12 @@ export interface Task {
     taskStep?: number;
     url: string;
     method: "GET" | "POST" | "PUT" | string;
-    compute: "Lambda" | "EC2" | string;
+    compute: "Lambda" | "EC2" | "Fargate" | "Batch";
     KeyName?: string;
     InstanceType?: string;
     qps?: number;
     n?: number;
-    c?: number;
+    c: number;
     taskDelaySeconds?: number;
     runInstanceBatch?: number;
     regions: string[];

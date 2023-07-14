@@ -1,5 +1,5 @@
 import {ApiHandler} from "sst/node/api";
-import {executionUrl, jsonResponse} from "sst-helper";
+import {jsonResponse} from "sst-helper";
 import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {v4 as uuidv4} from "uuid";
@@ -11,6 +11,9 @@ import {checkStackDeployment, SST_APP, SST_STAGE} from "../lib/cf";
 import process from "process";
 import {RunInstancesRequest} from "aws-sdk/clients/ec2";
 import {runInstances} from "../lib/ec2";
+import {RunTaskRequest} from "aws-sdk/clients/ecs";
+import {runTasks} from "../lib/fargate";
+import {SubmitJobRequest} from "aws-sdk/clients/batch";
 
 const {
     INSTANCE_PROFILE_NAME,
@@ -20,10 +23,23 @@ const {
 const dispatchStateMachineArn = process.env.DISPATCH_SF_ARN || "";
 const requestStateMachineArn = process.env.REQUEST_SF_ARN || "";
 const current_region = process.env.AWS_REGION || "";
+const {
+    ROLE_ARN,
+    VPC_ID,
+    VPC_SUBNETS,
+    SECURITY_GROUP_ID,
+    TASK_DEFINITION_FAMILY,
+    CONTAINER_NAME,
+    CLUSTER_NAME,
+    JOB_DEFINITION,
+    JOB_QUEUE
+} = process.env;
 
 export const handler = ApiHandler(async (_evt) => {
 
     let task: Task = JSON.parse(_evt.body || "{}");
+
+    task.createdAt = new Date().toISOString();
 
     if (task.report) {
         task.report = true;
@@ -37,10 +53,9 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "compute is empty"}, 400);
     }
 
-    if (task.compute !== "EC2" && task.compute !== "Lambda") {
-        return jsonResponse({msg: "compute must be Lambda or EC2"}, 400);
+    if (!["EC2", "Lambda", "Fargate", "Batch"].includes(task.compute)) {
+        return jsonResponse({msg: `compute must be in ${["EC2", "Lambda", "Fargate", "Batch"].join(',')}`}, 400);
     }
-
 
     if (task.compute === "EC2") {
 
@@ -92,8 +107,12 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "n must be greater than 0 and be integer"}, 400);
     }
 
+    if (task.c === undefined) {
+        task.c = 1;
+    }
+
     // c must be greater than 0 and be integer
-    if (task.c !== undefined && (task.c <= 0 || !Number.isInteger(task.c))) {
+    if ((task.c <= 0 || !Number.isInteger(task.c))) {
         return jsonResponse({msg: "c must be greater than 0 and be integer"}, 400);
     }
 
@@ -177,14 +196,14 @@ export const handler = ApiHandler(async (_evt) => {
 
     try {
         const start = Date.now();
-        const states = task.compute === "Lambda" ? await dispatchRegionsLambda(task) : await dispatchRegionsEc2(task);
+        const states = await dispatchTask(task);
         const end = Date.now();
 
         return jsonResponse({
             createTaskLatency: Number(end.toString()) - Number(start.toString()),
             ...task,
             states,
-            nPerInstance: (task.n && task.c) ? Math.ceil(task.n / task.c) : undefined,
+            nPerClient: (task.n && task.c) ? Math.ceil(task.n / task.c) : undefined,
         });
 
     } catch (e: any) {
@@ -193,51 +212,25 @@ export const handler = ApiHandler(async (_evt) => {
 
 });
 
-async function dispatchRegionsLambda(task: Task) {
+async function dispatchTask(task: Task) {
+
     let statesList: StatesList = {};
 
     for (const region of task.regions) {
 
         task.region = region;
 
-        let sfExe: StartExecutionInput[] = [];
+        let states;
 
-        if (task.n && task.c) {
-            for (let i = 0; i < task.c; i++) {
-                const taskClient = i + 1;
-                sfExe.push({
-                    name: `request_${task.taskName}_${task.taskId}-${taskClient}`,
-                    stateMachineArn: requestStateMachineArn.replace(current_region, region),
-                    input: JSON.stringify({
-                        Payload: {
-                            ...task,
-                            taskClient,
-                            perStateMachineExecuted: Math.ceil(task.n / task.c),
-                            currentStateMachineExecutedLeft: Math.ceil(task.n / task.c),
-                            shouldEnd: false,
-                        },
-                    }),
-                });
-            }
+        if (task.compute === "EC2") {
+            states = await createEc2(task, region);
+        } else if (task.compute === "Fargate") {
+            states = await createEcsTasks(task, region);
+        } else if (task.compute === "Batch") {
+            states = await createJobs(task, region);
         } else {
-            const c = task.c ? task.c : 1;
-
-            for (let i = 0; i < c; i++) {
-                sfExe.push({
-                    name: `${task.qps ? 'qps' : 'batch'}_${task.taskName}_${task.taskId}`,
-                    stateMachineArn: dispatchStateMachineArn.replace(current_region, region),
-                    input: JSON.stringify({
-                        Payload: {
-                            ...task,
-                            taskClient: c,
-                            shouldEnd: false,
-                        },
-                    }),
-                });
-            }
-
+            states = await createSf(task, region);
         }
-        const states = await startExecutionBatch(region, sfExe);
 
         const dynamodb = new AWS.DynamoDB.DocumentClient({region});
         await dynamodb.put({
@@ -249,46 +242,90 @@ async function dispatchRegionsLambda(task: Task) {
             },
         } as AWS.DynamoDB.DocumentClient.PutItemInput).promise();
 
-        states.forEach((state) => {
-            state.executionUrl = executionUrl(state.executionArn, region);
-        });
-
         statesList[region] = states;
     }
 
     return statesList;
+
+
 }
 
-async function dispatchRegionsEc2(task: Task) {
+async function createSf(task: Task, region: string) {
 
-    let ec2Instances = {};
+    let sfExe: StartExecutionInput[] = [];
 
-    for (const region of task.regions) {
-
-        task.region = region;
-
-        if (task.n && task.c) {
-            ec2Instances = await createInstances(task, region, task.c);
-        } else {
-            ec2Instances = await createInstances(task, region, task.c ? task.c : 1);
+    if (task.n) {
+        for (let i = 0; i < task.c; i++) {
+            const taskClient = i + 1;
+            sfExe.push({
+                name: `batch_${task.taskName}_${task.taskId}-${taskClient}`,
+                stateMachineArn: requestStateMachineArn.replace(current_region, region),
+                input: JSON.stringify({
+                    Payload: {
+                        ...task,
+                        taskClient,
+                        perStateMachineExecuted: Math.ceil(task.n / task.c),
+                        currentStateMachineExecutedLeft: Math.ceil(task.n / task.c),
+                        shouldEnd: false,
+                    },
+                }),
+            });
         }
+    } else {
 
-        const dynamodb = new AWS.DynamoDB.DocumentClient({region});
-        await dynamodb.put({
-            TableName: Table.tasks.tableName,
-            Item: {
-                ...task,
-                ec2Instances,
-                createdAt: new Date().toISOString(),
-            },
-        } as AWS.DynamoDB.DocumentClient.PutItemInput).promise();
+        for (let i = 0; i < task.c; i++) {
+            const taskClient = i + 1;
+            sfExe.push({
+                name: `qps_${task.taskName}_${task.taskId}-${taskClient}`,
+                stateMachineArn: dispatchStateMachineArn.replace(current_region, region),
+                input: JSON.stringify({
+                    Payload: {
+                        ...task,
+                        taskClient,
+                        shouldEnd: false,
+                    },
+                }),
+            });
+        }
 
     }
 
-    return ec2Instances;
+    return await startExecutionBatch(region, sfExe);
 }
 
-async function createInstances(task: Task, region: string, MaxCount: number) {
+async function createEcsTasks(task: Task, region: string) {
+
+    const item: RunTaskRequest = {
+        cluster: CLUSTER_NAME,
+        taskDefinition: TASK_DEFINITION_FAMILY || "",
+        count: task.c,
+        launchType: 'FARGATE',
+        networkConfiguration: {
+            awsvpcConfiguration: {
+                subnets: JSON.parse(VPC_SUBNETS || "[]"),
+                securityGroups: [SECURITY_GROUP_ID || ""],
+                assignPublicIp: 'ENABLED',
+            },
+        },
+        overrides: {
+            containerOverrides: [
+                {
+                    name: CONTAINER_NAME,
+                    environment: [
+                        {
+                            name: 'TASK',
+                            value: JSON.stringify(task),
+                        }
+                    ]
+                }
+            ]
+        }
+    };
+
+    return await runTasks(task, region, item);
+}
+
+async function createEc2(task: Task, region: string) {
     const request_count = (task.n && task.c) ? Math.ceil(task.n / task.c) : task.n;
 
     const start_time = Math.round(new Date(task.startTime).getTime() / 1000);
@@ -369,5 +406,28 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
         ]
     };
 
-    return await runInstances(task, region, runInstanceParams, MaxCount);
+    return await runInstances(task, region, runInstanceParams);
+}
+
+async function createJobs(task: Task, region: string) {
+    const batch = new AWS.Batch({region});
+
+    const params: SubmitJobRequest = {
+        jobName: `${SST_APP}-${SST_STAGE}-${task.taskName}-${task.qps ? 'qps' : 'batch'}-${task.taskId}`,
+        jobDefinition: JOB_DEFINITION || "",
+        jobQueue: JOB_QUEUE || "",
+        arrayProperties: {
+            size: task.c,
+        },
+        containerOverrides: {
+            environment: [
+                {
+                    name: 'TASK',
+                    value: JSON.stringify(task)
+                },
+            ]
+        }
+    };
+
+    return await batch.submitJob(params).promise();
 }

@@ -3,9 +3,112 @@ import {bucketUrl, ddbUrl, lambdaUrl, sfUrl, stackUrl, topicUrl} from "sst-helpe
 import {Choice, Condition, JsonPath, Pass, StateMachine, TaskInput} from 'aws-cdk-lib/aws-stepfunctions';
 import {LambdaInvoke} from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as events from "aws-cdk-lib/aws-events";
-import {CfnInstanceProfile, ManagedPolicy, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
+import {CfnInstanceProfile, ManagedPolicy, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
+import {SecurityGroup, SubnetType, Vpc} from "aws-cdk-lib/aws-ec2";
+import * as batch from "aws-cdk-lib/aws-batch";
+import {Cluster, Compatibility, ContainerImage, LogDrivers, NetworkMode, TaskDefinition} from "aws-cdk-lib/aws-ecs";
 
 export function Stack({stack}: StackContext) {
+
+    const vpc = new Vpc(stack, "vpc", {
+        maxAzs: 2,
+        natGateways: 1,
+        subnetConfiguration: [
+            {
+                name: "bench-public",
+                subnetType: SubnetType.PUBLIC,
+            },
+        ]
+    });
+
+    const vpcSubnets = vpc.publicSubnets.map(subnet => subnet.subnetId);
+
+    const securityGroup = new SecurityGroup(stack, "securityGroup", {
+        vpc,
+        allowAllOutbound: true,
+    });
+
+    const ecsCluster = new Cluster(stack, "cluster", {
+        vpc,
+        clusterName: `${stack.stackName}-cluster`,
+        containerInsights: true,
+    });
+
+    const ecsTaskExecutionRole = new Role(stack, "ecsTaskExecutionRole", {
+        assumedBy: new ServicePrincipal("ecs-tasks.amazonaws.com"),
+        managedPolicies: [
+            ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"),
+        ]
+    });
+
+    const ecsTaskDefinition = new TaskDefinition(stack, "ecsTaskDefinition", {
+        family: `${stack.stackName}-ecsTaskDefinition`,
+        networkMode: NetworkMode.AWS_VPC,
+        taskRole: ecsTaskExecutionRole,
+        executionRole: ecsTaskExecutionRole,
+        cpu: "1024",
+        memoryMiB: "2048",
+        compatibility: Compatibility.FARGATE,
+    });
+
+    const container = ecsTaskDefinition.addContainer('TaskContainer', {
+        image: ContainerImage.fromRegistry("public.ecr.aws/elonniu/serverless-bench:latest"),
+        logging: LogDrivers.awsLogs({streamPrefix: 'TaskLogs'}),
+    });
+
+    const batchRole = new Role(stack, 'batchRole', {
+        assumedBy: new ServicePrincipal('batch.amazonaws.com'),
+    });
+
+    batchRole.addToPolicy(new PolicyStatement({
+        actions: ['logs:DescribeLogGroups', 'ecs:ListClusters', 'logs:CreateLogGroup'],
+        resources: ['*'],
+    }));
+
+    const batchComputeEnvironment = new batch.CfnComputeEnvironment(stack, 'computeEnvironment', {
+        // serviceRole: batchRole.roleArn,
+        type: 'MANAGED',
+        computeResources: {
+            type: 'FARGATE',
+            maxvCpus: 2,
+            securityGroupIds: [securityGroup.securityGroupId],
+            subnets: vpcSubnets,
+        },
+    });
+
+    const jobQueue = new batch.CfnJobQueue(stack, 'JobQueue', {
+        computeEnvironmentOrder: [{
+            computeEnvironment: batchComputeEnvironment.ref,
+            order: 1,
+        }],
+        priority: 1,
+        state: 'ENABLED',
+        jobQueueName: 'BenchJobQueue',
+    });
+
+    const jobDefinition = new batch.CfnJobDefinition(stack, 'JobDefinition', {
+        type: 'container',
+        platformCapabilities: ['FARGATE'],
+        containerProperties: {
+            image: "public.ecr.aws/elonniu/serverless-bench:latest",
+            resourceRequirements: [
+                {type: 'MEMORY', value: '2048'},  // value is in MiB
+                {type: 'VCPU', value: '1'}
+            ],
+            executionRoleArn: ecsTaskExecutionRole.roleArn,
+            networkConfiguration: {
+                assignPublicIp: 'ENABLED',
+            },
+            logConfiguration: { // Set log configuration
+                logDriver: 'awslogs',
+                options: {
+                    'awslogs-group': '/aws/batch/job',
+                    'awslogs-region': stack.region,
+                    'awslogs-stream-prefix': 'bench-job-definition'
+                }
+            }
+        },
+    });
 
     const ec2Role = new Role(stack, "ec2Role", {
         assumedBy: new ServicePrincipal("ec2.amazonaws.com"),
@@ -20,14 +123,14 @@ export function Stack({stack}: StackContext) {
         instanceProfileName: `${stack.stackName}-ec2InstanceProfile`
     });
 
+    const bucket = new Bucket(stack, "bucket");
+
     const taskTable = new Table(stack, "tasks", {
         fields: {
             taskId: "string",
         },
         primaryIndex: {partitionKey: "taskId"},
     });
-
-    const bucket = new Bucket(stack, "bucket");
 
     const logsTable = new Table(stack, "logs", {
         fields: {
@@ -50,8 +153,8 @@ export function Stack({stack}: StackContext) {
 
     const requestDispatchFunction = new Function(stack, "requestDispatchFunction", {
         handler: "packages/functions/src/sf/requestDispatch.handler",
+        permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData'],
         memorySize: 9999,
-        permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData']
     });
 
     const lambdaTask = new LambdaInvoke(stack, 'Invoke Dispatch Lambda', {
@@ -122,9 +225,14 @@ export function Stack({stack}: StackContext) {
     const taskCreateFunction = new Function(stack, "taskCreateFunction", {
         handler: "packages/functions/src/tasks/create.handler",
         permissions: [
-            'states:StartExecution', 'dynamodb:PutItem', 'ec2:describeRegions', 'cloudformation:DescribeStacks',
+            'states:StartExecution',
+            'dynamodb:PutItem',
+            'ec2:describeRegions',
             'ec2:*',
-            'iam:*'
+            'iam:*',
+            'cloudformation:DescribeStacks',
+            'ecs:RunTask',
+            'ecs:RegisterTaskDefinition',
         ],
         memorySize: 2048,
         bind: [taskTable],
@@ -133,8 +241,22 @@ export function Stack({stack}: StackContext) {
             REQUEST_SF_ARN: requestStateMachine.stateMachineArn,
             INSTANCE_PROFILE_NAME: ec2InstanceProfile.instanceProfileName || "",
             BUCKET_NAME: bucket.bucketName,
+            ROLE_ARN: ecsTaskExecutionRole.roleArn,
+            VPC_ID: vpc.vpcId,
+            VPC_SUBNETS: JSON.stringify(vpcSubnets),
+            SECURITY_GROUP_ID: securityGroup.securityGroupId,
+            TASK_DEFINITION_FAMILY: ecsTaskDefinition.family,
+            CLUSTER_NAME: ecsCluster.clusterName,
+            CLUSTER_ARN: ecsCluster.clusterArn,
+            CONTAINER_NAME: container.containerName,
+            JOB_DEFINITION: jobDefinition.ref,
+            JOB_QUEUE: jobQueue.ref,
         },
     });
+    taskCreateFunction.addToRolePolicy(new PolicyStatement({
+        actions: ['batch:SubmitJob'],
+        resources: ['*'],
+    }) as any);
 
     const taskListFunction = new Function(stack, "taskListFunction", {
         handler: "packages/functions/src/tasks/list.handler",
@@ -145,16 +267,22 @@ export function Stack({stack}: StackContext) {
 
     const taskAbortFunction = new Function(stack, "taskAbortFunction", {
         handler: "packages/functions/src/tasks/abort.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem', 'ec2:terminateInstances'],
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem', 'ec2:terminateInstances', 'ecs:stopTask'],
         memorySize: 2048,
-        bind: [taskTable]
+        bind: [taskTable],
+        environment: {
+            CLUSTER_ARN: ecsCluster.clusterArn,
+        }
     });
 
     const taskDeleteFunction = new Function(stack, "taskDeleteFunction", {
         handler: "packages/functions/src/tasks/delete.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances'],
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances', 'ecs:stopTask'],
         memorySize: 2048,
-        bind: [taskTable]
+        bind: [taskTable],
+        environment: {
+            CLUSTER_ARN: ecsCluster.clusterArn,
+        }
     });
 
     const regionsFunction = new Function(stack, "regionsFunction", {
@@ -164,14 +292,19 @@ export function Stack({stack}: StackContext) {
     });
 
     const sfStatusChangeLambda = new Function(stack, "sfStatusChange", {
-        handler: "packages/functions/src/eda/sfStatus.handler",
+        handler: "packages/functions/src/eda/sfStatusChange.handler",
+        bind: [taskTable]
+    });
+
+    const fargateStatusChangeLambda = new Function(stack, "fargateStatusChange", {
+        handler: "packages/functions/src/eda/fargateStatusChange.handler",
         bind: [taskTable]
     });
 
     const ec2StatusChangeLambda = new Function(stack, "ec2StatusChange", {
-        handler: "packages/functions/src/eda/ec2Status.handler",
+        handler: "packages/functions/src/eda/ec2StatusChange.handler",
         bind: [taskTable],
-        permissions: ["ec2:*"]
+        permissions: ["ec2:describeTags"]
     });
 
     new EventBus(stack, "Bus", {
@@ -182,10 +315,25 @@ export function Stack({stack}: StackContext) {
             stepFunctions: {
                 pattern: {
                     source: ["aws.states"],
-                    detailType: ["Step Functions Execution Status Change"]
+                    detailType: ["Step Functions Execution Status Change"],
+                    detail: {
+                        executionArn: [dispatchStateMachine.stateMachineArn]
+                    }
                 },
                 targets: {
                     myTarget1: sfStatusChangeLambda,
+                },
+            },
+            ecs: {
+                pattern: {
+                    source: ["aws.ecs"],
+                    detailType: ["ECS Task State Change", "ECS Container Instance State Change", "ECS Deployment State Change"],
+                    detail: {
+                        clusterArn: [ecsCluster.clusterArn]
+                    }
+                },
+                targets: {
+                    myTarget1: fargateStatusChangeLambda,
                 },
             },
             ec2: {

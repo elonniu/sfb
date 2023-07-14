@@ -1,17 +1,42 @@
 import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
-import {Execution} from "../common";
+import {executionUrl} from "sst-helper";
 
-async function batchStopRegions(executionArn: string, region: string) {
+async function batchStopStepFunctionsByRegion(executionArn: string, region: string) {
     const stepFunctions = new AWS.StepFunctions({region});
     await stepFunctions.stopExecution({executionArn}).promise();
 }
 
-export async function batchStop(list: any[]) {
+export async function batchStopStepFunctions(globalTasks: any[]) {
+
+
+    let listStop = [];
+
+    for (let current of globalTasks) {
+
+        if (current.compute !== "Lambda") {
+            continue;
+        }
+
+        if (current && current.states) {
+
+            for (const key in current.states) {
+                if (current.states.hasOwnProperty(key)) {
+                    listStop.push({
+                        region: current.region,
+                        executionArn: key
+                    });
+                }
+            }
+
+        }
+
+    }
+
     let promises = [];
-    for (let i = 0; i < list.length; i++) {
-        const {executionArn, region} = list[i];
-        promises.push(batchStopRegions(executionArn, region));
+    for (let i = 0; i < listStop.length; i++) {
+        const {executionArn, region} = listStop[i];
+        promises.push(batchStopStepFunctionsByRegion(executionArn, region));
     }
     await Promise.all(promises);
 }
@@ -20,7 +45,7 @@ export async function startExecutionBatch(region: string, items: StartExecutionI
 
     const stepFunctions = new AWS.StepFunctions({region});
 
-    let list: Execution[] = [];
+    let list = {};
 
     const batchWriteParallel = async (items: StartExecutionInput[]) => {
         const promises = [];
@@ -40,11 +65,10 @@ export async function startExecutionBatch(region: string, items: StartExecutionI
     await batchWriteParallel(items)
         .then((data) => {
             data.forEach((item, index) => {
-                list.push({
-                    executionArn: item.executionArn,
+                list[item.executionArn] = {
                     status: "WAITING",
-                    startDate: item.startDate.toISOString() || new Date().toISOString()
-                });
+                    url: executionUrl(item.executionArn, region)
+                };
             });
             // console.log('batchWriteParallel succeed: ', data);
         })

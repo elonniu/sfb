@@ -2,14 +2,36 @@ import AWS from "aws-sdk";
 import {RunInstancesRequest} from "aws-sdk/clients/ec2";
 import {Task} from "../common";
 
-export async function batchStopEc2(task: any) {
-    const {ec2Instances, region} = task;
-    if (!ec2Instances) {
-        return;
-    }
-    const InstanceIds = Object.keys(ec2Instances);
+async function batchStopEc2ByRegion(InstanceIds: string[], region: string) {
     const ec2 = new AWS.EC2({apiVersion: '2016-11-15', region});
     await ec2.terminateInstances({InstanceIds}).promise();
+}
+
+export async function batchStopEc2s(globalTasks: any[]) {
+
+    let promises = [];
+
+    for (let current of globalTasks) {
+
+        if (current.compute !== "EC2") {
+            continue;
+        }
+
+        if (current.states) {
+
+            let InstanceIds = [];
+            for (const key in current.states) {
+                if (current.states.hasOwnProperty(key)) {
+                    InstanceIds.push(key);
+                }
+            }
+
+            promises.push(batchStopEc2ByRegion(InstanceIds, current.region));
+        }
+
+    }
+
+    await Promise.all(promises);
 }
 
 export async function runInstancesBatch(region: string, items: RunInstancesRequest[]) {
@@ -35,7 +57,9 @@ export async function runInstancesBatch(region: string, items: RunInstancesReque
 
                 item.Instances?.forEach((instance) => {
                     if (instance.InstanceId) {
-                        InstanceIds[instance.InstanceId] = "WAITING";
+                        InstanceIds[instance.InstanceId] = {
+                            status: "WAITING",
+                        };
                     }
                 });
 
@@ -50,11 +74,13 @@ export async function runInstancesBatch(region: string, items: RunInstancesReque
 }
 
 
-export async function runInstances(task: Task, region: string, item: RunInstancesRequest, MaxCount: number) {
+export async function runInstances(task: Task, region: string, item: RunInstancesRequest) {
 
     if (!task.runInstanceBatch) {
         task.runInstanceBatch = 20;
     }
+
+    let MaxCount = task.c;
 
     let InstanceIds = {};
 

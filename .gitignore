@@ -15,3 +15,5 @@ node_modules
 .env*.local
 .idea
 .sst.*
+cdk.context.json
+/packages/job/target/

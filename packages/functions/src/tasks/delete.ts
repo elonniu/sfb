@@ -3,8 +3,9 @@ import {jsonResponse} from "sst-helper";
 import AWS from "aws-sdk";
 import {Table} from "sst/node/table";
 import {batchDelete, batchGet} from "../lib/ddb";
-import {batchStop} from "../lib/sf";
-import {batchStopEc2} from "../lib/ec2";
+import {batchStopStepFunctions} from "../lib/sf";
+import {batchStopEc2s} from "../lib/ec2";
+import {batchStopTasks} from "../lib/fargate";
 
 const TableName = Table.tasks.tableName;
 const current_region = process.env.AWS_REGION || "";
@@ -36,19 +37,9 @@ export const handler = ApiHandler(async (_evt) => {
 
         // delete global tasks
         if (globalTasks.length > 0) {
-            let listStop = [];
-            for (let current of globalTasks) {
-                if (current && current.states) {
-                    for (let state of current.states) {
-                        listStop.push({
-                            region: current.region,
-                            executionArn: state.executionArn
-                        });
-                    }
-                }
-                await batchStopEc2(current);
-            }
-            await batchStop(listStop);
+            await batchStopEc2s(globalTasks);
+            await batchStopTasks(globalTasks);
+            await batchStopStepFunctions(globalTasks);
             await batchDelete(TableName, {taskId}, task.regions);
         }
 
