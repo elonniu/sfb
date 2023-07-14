@@ -2,7 +2,7 @@ import {HttpStatusCode} from "axios";
 import {Arn} from "aws-sdk/clients/stepfunctions";
 import {Table} from "sst/node/table";
 import AWS from "aws-sdk";
-import {batchGet} from "./lib/ddb";
+import {batchGet, dynamoDb} from "./lib/ddb";
 
 export interface StatesList {
     [key: string]: any;
@@ -82,4 +82,24 @@ export async function getTaskGlobal(taskId: string, region: string) {
     return (task.regions && task.regions.length) > 1
         ? await batchGet(TableName, {taskId}, task.regions)
         : [task];
+}
+
+export async function updateStateStatus(taskId: string, arn: string, status: string) {
+    const params = {
+        TableName: Table.tasks.tableName,
+        Key: {
+            taskId
+        },
+        ExpressionAttributeNames: {
+            '#jsonField': 'states',
+            '#instanceId': arn
+        },
+        ExpressionAttributeValues: {
+            ':newValue': status
+        },
+        UpdateExpression: 'SET #jsonField.#instanceId = :newValue',
+        ReturnValues: 'UPDATED_NEW'
+    };
+
+    await dynamoDb.update(params).promise();
 }

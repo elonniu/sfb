@@ -1,5 +1,5 @@
 import AWS from "aws-sdk";
-import {updateStateStatus} from "./fargateStatusChange";
+import {updateStateStatus} from "../common";
 
 const ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
 

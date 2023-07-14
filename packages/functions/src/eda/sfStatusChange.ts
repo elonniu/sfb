@@ -1,5 +1,4 @@
-import {Task} from "../common";
-import {updateStateStatus} from "./fargateStatusChange";
+import {Task, updateStateStatus} from "../common";
 
 export async function handler(event: any) {
 

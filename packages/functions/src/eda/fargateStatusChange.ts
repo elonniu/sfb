@@ -1,6 +1,4 @@
-import {Task} from "../common";
-import {Table} from "sst/node/table";
-import {dynamoDb} from "../lib/ddb";
+import {Task, updateStateStatus} from "../common";
 
 export async function handler(event: any) {
 
@@ -21,24 +19,4 @@ export async function handler(event: any) {
     }
 
     return {};
-}
-
-export async function updateStateStatus(taskId: string, arn: string, status: string) {
-    const params = {
-        TableName: Table.tasks.tableName,
-        Key: {
-            taskId
-        },
-        ExpressionAttributeNames: {
-            '#jsonField': 'states',
-            '#instanceId': arn
-        },
-        ExpressionAttributeValues: {
-            ':newValue': status
-        },
-        UpdateExpression: 'SET #jsonField.#instanceId = :newValue',
-        ReturnValues: 'UPDATED_NEW'
-    };
-
-    await dynamoDb.update(params).promise();
 }
