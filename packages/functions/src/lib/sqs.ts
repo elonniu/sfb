@@ -3,7 +3,7 @@ import {v4 as uuidv4} from "uuid";
 
 const sqs = new AWS.SQS();
 
-export function sqsPut(QueueUrl: string, items: object[]) {
+export async function sqsPut(QueueUrl: string, items: object[]) {
 
     const groupSize = 10;
 
@@ -20,7 +20,7 @@ export function sqsPut(QueueUrl: string, items: object[]) {
         return Promise.all(promises);
     };
 
-    batchWriteParallel(items)
+    await batchWriteParallel(items)
         .then((data) => {
             // console.log('batchWriteParallel succeed: ', data);
         })
