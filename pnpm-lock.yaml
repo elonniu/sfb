@@ -25,8 +25,8 @@ importers:
         specifier: 10.1.156
         version: 10.1.156
       sst:
-        specifier: 2.21.3
-        version: 2.21.3
+        specifier: 2.21.5
+        version: 2.21.5
       typescript:
         specifier: ^5.1.6
         version: 5.1.6
@@ -53,8 +53,8 @@ importers:
         specifier: ^9.0.2
         version: 9.0.2
       sst:
-        specifier: 2.21.3
-        version: 2.21.3
+        specifier: 2.21.5
+        version: 2.21.5
       vitest:
         specifier: ^0.32.2
         version: 0.32.2
@@ -5557,8 +5557,8 @@ packages:
       - debug
     dev: false
 
-  /sst@2.21.3:
-    resolution: {integrity: sha512-VB+QKDo4QwfDjmoYY+BCqPyzHiWZRq2U7KNTviQ5LGZvf+UT1BQpUtYj3YUxVF792fweMK8K9Ca3dWn+MvV9Ow==}
+  /sst@2.21.5:
+    resolution: {integrity: sha512-FQO/HQZa6WZlQOU3OWhgaqpVg5aUZ0KssMqaH/h+aYhZkHSYc4jyfHrfVPqxVSyhIunRF6yBuoRUfR7Y3xZ6zw==}
     hasBin: true
     peerDependencies:
       '@sls-next/lambda-at-edge': ^3.7.0

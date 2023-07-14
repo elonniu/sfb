@@ -5,9 +5,14 @@ import {batchPut} from "../lib/ddb";
 import {Table} from "sst/node/table";
 import {v4 as uuidv4} from "uuid";
 import AWS from "aws-sdk";
-import {checkStepFunctionsStep} from "./requestDispatch";
+import {snsBatch} from "../lib/sns";
+import {Topic} from "sst/node/topic";
+import {CloudWatchNamespace} from "../lib/cf";
+
+export const checkStepFunctionsStep = 5;
 
 const stepFunctions = new AWS.StepFunctions();
+const cloudwatch = new AWS.CloudWatch();
 
 export async function handler(event: any) {
 
@@ -15,11 +20,10 @@ export async function handler(event: any) {
     const task: Task = input.value;
     const invokeStart = new Date().toISOString();
 
-    task.taskStep = task.taskStep ? task.taskStep++ : 1;
-
     let checkStepFunctionsCounter = 0;
 
     while (true) {
+
         if (new Date().getTime() > new Date(invokeStart).getTime() + 898 * 1000) {
             return {...task, shouldEnd: false};
         }
@@ -49,14 +53,33 @@ export async function handler(event: any) {
             return {shouldEnd: true};
         }
 
-        await requestBatch(task);
-
-        if (task.currentStateMachineExecutedLeft !== undefined) {
-            task.currentStateMachineExecutedLeft--;
-            if (task.currentStateMachineExecutedLeft === 0) {
+        if (task.n) {
+            if (task.c == 1) {
+                let list = [];
+                for (let i = 0; i < task.n; i++) {
+                    list.push({...task});
+                }
+                await sendToSns(ExecutionId, list);
                 return {shouldEnd: true};
             }
+            if (task.c > 1) {
+                await requestBatch(task);
+                if (task.currentStateMachineExecutedLeft !== undefined) {
+                    task.currentStateMachineExecutedLeft--;
+                    if (task.currentStateMachineExecutedLeft === 0) {
+                        return {shouldEnd: true};
+                    }
+                }
+            }
+        } else if (task.qps) {
+            let list = [];
+            for (let i = 0; i < task.qps; i++) {
+                list.push({...task});
+            }
+            await sendToSns(ExecutionId, list);
+            await delay(startSeconds);
         }
+
     }
 
 }
@@ -97,4 +120,54 @@ async function requestBatch(task: Task, batch: number = 1) {
     }
 
     await batchPut(Table.logs.tableName, list);
+}
+
+export async function sendToSns(ExecutionId: string, tasks: Task[]) {
+    const start = new Date().toISOString();
+    await snsBatch(Topic.Topic.topicArn, tasks);
+    const end = new Date().toISOString();
+
+    if (tasks[0].report) {
+        return;
+    }
+
+    const dispatchSnsLatencyMs = new Date(end).getTime() - new Date(start).getTime();
+
+    const params = {
+        MetricData: [
+            {
+                MetricName: 'dispatchSnsLatencyMs',
+                Dimensions: [
+                    {
+                        Name: "TaskId",
+                        Value: tasks[0].taskId
+                    },
+                ],
+                Timestamp: new Date,
+                Unit: 'Milliseconds',
+                Value: dispatchSnsLatencyMs
+            },
+            {
+                MetricName: 'dispatchSnsSize',
+                Dimensions: [
+                    {
+                        Name: "TaskId",
+                        Value: tasks[0].taskId
+                    },
+                ],
+                Timestamp: new Date,
+                Unit: 'Count',
+                Value: tasks.length
+            },
+        ],
+        Namespace: CloudWatchNamespace
+    };
+
+    cloudwatch.putMetricData(params, function (err, data) {
+        if (err) {
+            console.log(err, err.stack);
+        } else {
+            // console.log(data);
+        }
+    });
 }

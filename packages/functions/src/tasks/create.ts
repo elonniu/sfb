@@ -20,12 +20,9 @@ const {
     BUCKET_NAME
 } = process.env;
 
-const dispatchStateMachineArn = process.env.DISPATCH_SF_ARN || "";
 const requestStateMachineArn = process.env.REQUEST_SF_ARN || "";
 const current_region = process.env.AWS_REGION || "";
 const {
-    ROLE_ARN,
-    VPC_ID,
     VPC_SUBNETS,
     SECURITY_GROUP_ID,
     TASK_DEFINITION_FAMILY,
@@ -254,40 +251,20 @@ async function createSf(task: Task, region: string) {
 
     let sfExe: StartExecutionInput[] = [];
 
-    if (task.n) {
-        for (let i = 0; i < task.c; i++) {
-            const taskClient = i + 1;
-            sfExe.push({
-                name: `batch_${task.taskName}_${task.taskId}-${taskClient}`,
-                stateMachineArn: requestStateMachineArn.replace(current_region, region),
-                input: JSON.stringify({
-                    Payload: {
-                        ...task,
-                        taskClient,
-                        perStateMachineExecuted: Math.ceil(task.n / task.c),
-                        currentStateMachineExecutedLeft: Math.ceil(task.n / task.c),
-                        shouldEnd: false,
-                    },
-                }),
-            });
-        }
-    } else {
-
-        for (let i = 0; i < task.c; i++) {
-            const taskClient = i + 1;
-            sfExe.push({
-                name: `qps_${task.taskName}_${task.taskId}-${taskClient}`,
-                stateMachineArn: dispatchStateMachineArn.replace(current_region, region),
-                input: JSON.stringify({
-                    Payload: {
-                        ...task,
-                        taskClient,
-                        shouldEnd: false,
-                    },
-                }),
-            });
-        }
-
+    for (let i = 0; i < task.c; i++) {
+        const taskClient = i + 1;
+        sfExe.push({
+            name: `${task.qps ? "qps" : "batch"}_${task.taskName}_${task.taskId}_${taskClient}`,
+            stateMachineArn: requestStateMachineArn.replace(current_region, region),
+            input: JSON.stringify({
+                Payload: {
+                    ...task,
+                    taskClient,
+                    currentStateMachineExecutedLeft: task.n ? Math.ceil(task.n / task.c) : undefined,
+                    shouldEnd: false,
+                },
+            }),
+        });
     }
 
     return await startExecutionBatch(region, sfExe);

@@ -157,33 +157,6 @@ export function Stack({stack}: StackContext) {
         bind: [logsTable, ipTable]
     });
 
-    const requestDispatchFunction = new Function(stack, "requestDispatchFunction", {
-        functionName: `${stack.stackName}-requestDispatchFunction`,
-        handler: "packages/functions/src/sf/requestDispatch.handler",
-        permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData'],
-        memorySize: 9999,
-    });
-
-    const lambdaTask = new LambdaInvoke(stack, 'Invoke Dispatch Lambda', {
-        lambdaFunction: requestDispatchFunction,
-        payload: TaskInput.fromObject({
-            ExecutionId: JsonPath.stringAt('$$.Execution.Id'),
-            input: TaskInput.fromJsonPathAt('$.Payload'),
-        }),
-        resultPath: '$',
-    });
-
-    const checkDispatchShouldEnd = new Choice(stack, 'Check Dispatch Should End')
-        .when(Condition.booleanEquals('$.Payload.shouldEnd', true), new Pass(stack, 'End Dispatch State'))
-        .otherwise(lambdaTask);
-
-    lambdaTask.next(checkDispatchShouldEnd);
-
-    const dispatchStateMachine = new StateMachine(stack, 'DispatchStateMachine', {
-        stateMachineName: `${stack.stackName}-DispatchStateMachine`,
-        definition: checkDispatchShouldEnd,
-    });
-
     const taskFunction = new Function(stack, "taskFunction", {
         functionName: `${stack.stackName}-taskFunction`,
         handler: "resources/golang/main.go",
@@ -202,7 +175,7 @@ export function Stack({stack}: StackContext) {
         handler: "packages/functions/src/sf/request.handler",
         memorySize: 4048,
         permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData'],
-        bind: [logsTable]
+        bind: [logsTable],
     });
 
     const requestLambdaTask = new LambdaInvoke(stack, 'Invoke Request Lambda', {
@@ -249,12 +222,9 @@ export function Stack({stack}: StackContext) {
         memorySize: 2048,
         bind: [taskTable],
         environment: {
-            DISPATCH_SF_ARN: dispatchStateMachine.stateMachineArn,
             REQUEST_SF_ARN: requestStateMachine.stateMachineArn,
             INSTANCE_PROFILE_NAME: ec2InstanceProfile.instanceProfileName || "",
             BUCKET_NAME: bucket.bucketName,
-            ROLE_ARN: ecsTaskExecutionRole.roleArn,
-            VPC_ID: vpc.vpcId,
             VPC_SUBNETS: JSON.stringify(vpcSubnets),
             SECURITY_GROUP_ID: securityGroup.securityGroupId,
             TASK_DEFINITION_FAMILY: ecsTaskDefinition.family,
@@ -342,7 +312,7 @@ export function Stack({stack}: StackContext) {
                     source: ["aws.states"],
                     detailType: ["Step Functions Execution Status Change"],
                     detail: {
-                        executionArn: [dispatchStateMachine.stateMachineArn]
+                        executionArn: [requestStateMachine.stateMachineArn]
                     }
                 },
                 targets: {
@@ -383,7 +353,6 @@ export function Stack({stack}: StackContext) {
     });
 
     taskFunction.bind([logsTable, topic]);
-    requestDispatchFunction.bind([topic]);
 
     const api = new Api(stack, "api", {
         routes: {
@@ -406,9 +375,7 @@ export function Stack({stack}: StackContext) {
         logsTable: ddbUrl(logsTable.tableName, stack.region),
         ipTable: ddbUrl(ipTable.tableName, stack.region),
         topic: topicUrl(topic.topicArn, stack.region),
-        stateMachine: sfUrl(dispatchStateMachine.stateMachineArn, stack.region),
         taskCreateFunction: lambdaUrl(taskCreateFunction.functionName, stack.region),
-        requestDispatchFunction: lambdaUrl(requestDispatchFunction.functionName, stack.region),
         apiFunction: lambdaUrl(apiFunction.functionName, stack.region),
         RequestStateMachine: sfUrl(requestStateMachine.stateMachineArn, stack.region),
         SfRequestFunction: lambdaUrl(sfRequestFunction.functionName, stack.region),

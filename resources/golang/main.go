@@ -57,7 +57,6 @@ type Task struct {
 	RunInstanceBatch                *int
 	Regions                         []string
 	Region                          string
-	PerStateMachineExecuted         *int
 	CurrentStateMachineExecutedLeft *int
 	Delay                           *int
 	Timeout                         int

@@ -22,7 +22,6 @@ export interface Task {
     taskId: string;
     taskType: string;
     taskClient?: number;
-    taskStep?: number;
     url: string;
     method: "GET" | "POST" | "PUT" | string;
     compute: "Lambda" | "EC2" | "Fargate" | "Batch";
@@ -35,7 +34,6 @@ export interface Task {
     runInstanceBatch?: number;
     regions: string[];
     region: string;
-    perStateMachineExecuted?: number,
     currentStateMachineExecutedLeft?: number,
     delay?: number;
     timeout: number;
