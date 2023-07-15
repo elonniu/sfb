@@ -14,13 +14,14 @@ This is a tool for bench testing by AWS Serverless.
 ### 2.1 Install the dependencies
 
 ```bash
-npm install
+npm i -g pnpm
+pnpm i
 ```
 
 ### 2.2 Deploy the stack
 
 ```bash
-npm run deploy --stage <stage> --region <region>
+pnpm run deploy --region <your-region>
 ```
 
 ### 2.3 Get API Gateway URL from the output
