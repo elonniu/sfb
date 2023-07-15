@@ -6,11 +6,11 @@
   "scripts": {
     "dev": "sst dev",
     "build": "sst build",
-    "deploy": "sst deploy --stage prod",
     "remove": "sst remove",
+    "deploy": "sst deploy --stage prod",
+    "down": "sst remove --stage prod",
     "console": "sst console",
-    "typecheck": "tsc --noEmit",
-    "job": "ts-node packages/job/src/index.ts"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@tsconfig/node16": "^16.1.0",

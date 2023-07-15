@@ -6,25 +6,31 @@ This is a tool for bench testing by AWS Serverless.
 
 ## 2. How to use it?
 
-### 2.2 Requirements
+### 2.1 Requirements
 
 - `node -v` >= v16.16.0
 - `npm -v` >= 9.6.6
 
-### 2.1 Install the dependencies
+### 2.2 Install the dependencies
 
 ```bash
 npm i -g pnpm
 pnpm i
 ```
 
-### 2.2 Deploy the stack
+### 2.3 Deploy the stack
 
 ```bash
 pnpm run deploy --region <your-region>
 ```
 
-### 2.3 Get API Gateway URL from the output
+### 2.4 Remove the stack
+
+```bash
+pnpm run down --region <your-region>
+```
+
+### 2.5 Get API Gateway URL from the output
 
 ```bash
 Deployed:
@@ -32,9 +38,9 @@ Stack
 ApiEndpoint: https://{your-api-url}
 ```
 
-### 2.4 Test the API Gateway URL
+### 2.6 Test the API Gateway URL
 
-### 2.4.1 QPS Task
+### 2.6.1 QPS Task
 
 ```bash
 curl --location 'https://{your-endpoint}/tasks' \
@@ -58,7 +64,7 @@ curl --location 'https://{your-endpoint}/tasks' \
 
 ```
 
-### 2.4.2 Batch Task
+### 2.6.2 Batch Task
 
 ```bash
 curl --location 'https://{your-endpoint}/tasks' \
@@ -82,7 +88,7 @@ curl --location 'https://{your-endpoint}/tasks' \
 
 ```
 
-### 2.4.2 Batch & Client Task
+### 2.6.3 Batch & Client Task
 
 ```bash
 curl --location 'https://{your-endpoint}/tasks' \
