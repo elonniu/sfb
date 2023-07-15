@@ -57,7 +57,7 @@ export async function handler(event: any) {
             if (task.c == 1) {
                 let list = [];
                 for (let i = 0; i < task.n; i++) {
-                    list.push({...task});
+                    list.push({...task, n: 1});
                 }
                 await sendToSns(ExecutionId, list);
                 return {shouldEnd: true};

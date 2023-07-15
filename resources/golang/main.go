@@ -134,7 +134,7 @@ func ProcessTask(task Task) {
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
-						FetchAndMeasure(task.URL)
+						FetchAndMeasure(task)
 					}()
 				}
 				wg.Wait()
@@ -146,10 +146,10 @@ func ProcessTask(task Task) {
 		} else if task.N != nil {
 			times := *task.N / task.C
 			for i := 0; i < times; i++ {
-				FetchAndMeasure(task.URL)
+				FetchAndMeasure(task)
 			}
 		} else {
-			FetchAndMeasure(task.URL)
+			FetchAndMeasure(task)
 		}
 	} else {
 		fmt.Println("URL does not exist in JSON or is not a string")
@@ -157,11 +157,11 @@ func ProcessTask(task Task) {
 
 }
 
-func FetchAndMeasure(url string) {
+func FetchAndMeasure(task Task) {
 
 	start := time.Now()
 
-	resp, err := http.Get(url)
+	resp, err := http.Get(task.URL)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -169,5 +169,5 @@ func FetchAndMeasure(url string) {
 	defer resp.Body.Close()
 
 	duration := time.Since(start)
-	fmt.Printf("The network latency for the url %s is %s\n", url, duration)
+	fmt.Printf("The network latency for the url %s is %s\n", task.URL, duration)
 }

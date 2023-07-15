@@ -175,7 +175,7 @@ export function Stack({stack}: StackContext) {
         handler: "packages/functions/src/sf/request.handler",
         memorySize: 4048,
         permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData'],
-        bind: [logsTable],
+        bind: [logsTable, topic],
     });
 
     const requestLambdaTask = new LambdaInvoke(stack, 'Invoke Request Lambda', {
