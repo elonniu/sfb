@@ -41,11 +41,11 @@ curl --location 'https://{your-endpoint}/tasks' \
   --header 'Content-Type: application/json' \
   --data '{
     "taskName": "test",
-    "taskType": "http",
+    "taskType": "API",
     "report": true,
     "url": "https://{your-api}",
     "method": "GET",
-    "timeout": 1000,
+    "timeoutMS": 10000,
     "startTime": "2023-07-01T18:25:37.000+08:00",
     "endTime": "2023-07-01T18:40:37.000+08:00",
     "qps": 1,
@@ -65,12 +65,12 @@ curl --location 'https://{your-endpoint}/tasks' \
   --header 'Content-Type: application/json' \
   --data '{
     "taskName": "test",
-    "taskType": "http",
+    "taskType": "API",
     "report": true,
     "url": "https://{your-api}",
     "method": "GET",
     "n": 5,
-    "timeout": 1000,
+    "timeoutMS": 10000,
     "startTime": "2023-07-01T18:25:37.000+08:00",
     "endTime": "2023-07-01T18:40:37.000+08:00",
     "regions": [
@@ -89,13 +89,13 @@ curl --location 'https://{your-endpoint}/tasks' \
   --header 'Content-Type: application/json' \
   --data '{
     "taskName": "test",
-    "taskType": "http",
+    "taskType": "API",
     "report": true,
     "url": "https://{your-api}",
     "method": "GET",
     "n": 1,
     "c": 1,
-    "timeout": 1000,
+    "timeoutMS": 10000,
     "startTime": "2023-07-01T18:25:37.000+08:00",
     "endTime": "2023-07-01T18:40:37.000+08:00",
     "regions": [
