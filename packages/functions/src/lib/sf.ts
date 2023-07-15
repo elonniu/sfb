@@ -70,10 +70,10 @@ export async function startExecutionBatch(region: string, items: StartExecutionI
                     url: executionUrl(item.executionArn, region)
                 };
             });
-            // console.log('batchWriteParallel succeed: ', data);
         })
         .catch((error) => {
             console.error('batchWriteParallel error: ', error);
+            throw new Error(error.message);
         });
 
     return list;

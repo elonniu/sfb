@@ -18,3 +18,4 @@ node_modules
 cdk.context.json
 /resources/job/target/
 .sst.config.*.mjs
+.env

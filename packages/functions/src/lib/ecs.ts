@@ -106,6 +106,7 @@ async function runTasksBatch(region: string, items: RunTaskRequest[]) {
         })
         .catch((error) => {
             console.error('batchWriteParallel error: ', error);
+            throw new Error(error.message);
         });
 
     return InstanceIds;

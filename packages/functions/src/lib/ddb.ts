@@ -67,6 +67,7 @@ async function ddbPut(table: string, items: object[]) {
         })
         .catch((error) => {
             console.error('batchWriteParallel error: ', error);
+            throw new Error(error.message);
         });
 
 }

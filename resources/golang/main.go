@@ -163,6 +163,8 @@ func ProcessTask(task Task) {
 
 func FetchAndMeasure(task Task) {
 
+	task.TimeoutMs *= time.Millisecond
+
 	if task.TaskType == TaskTypeApi {
 		FetchAndMeasureApi(task)
 	}
@@ -174,8 +176,7 @@ func FetchAndMeasure(task Task) {
 }
 
 func FetchAndMeasureApi(task Task) {
-	timeout := task.TimeoutMs / 1000
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), task.TimeoutMs)
 	defer cancel()
 
 	start := time.Now()
@@ -197,8 +198,7 @@ func FetchAndMeasureApi(task Task) {
 }
 
 func FetchAndMeasureHtml(task Task) {
-	timeout := task.TimeoutMs / 1000
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), task.TimeoutMs)
 	defer cancel()
 
 	ctx, cancel = chromedp.NewContext(ctx)

@@ -68,6 +68,7 @@ export async function runInstancesBatch(region: string, items: RunInstancesReque
         })
         .catch((error) => {
             console.error('batchWriteParallel error: ', error);
+            throw new Error(error.message);
         });
 
     return InstanceIds;

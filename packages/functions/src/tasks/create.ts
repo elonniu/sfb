@@ -37,6 +37,11 @@ export const handler = ApiHandler(async (_evt) => {
 
     let task: Task = JSON.parse(_evt.body || "{}");
 
+    // get sourceIp
+    if (_evt.requestContext.http.sourceIp !== process.env.SOURCE_IP) {
+        return jsonResponse({msg: "sourceIp is not allowed"}, 400);
+    }
+
     task.createdAt = new Date().toISOString();
 
     if (task.report) {

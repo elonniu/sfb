@@ -14,7 +14,10 @@ export default {
         app.setDefaultFunctionProps({
             architecture: "arm_64",
             runtime: "nodejs18.x",
-            timeout: 900
+            timeout: 90,
+            environment: {
+                SOURCE_IP: process.env.SOURCE_IP || ""
+            }
         });
         app.stack(Stack);
     }
