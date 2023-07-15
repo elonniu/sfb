@@ -14,6 +14,7 @@ import {runInstances} from "../lib/ec2";
 import {RunTaskRequest} from "aws-sdk/clients/ecs";
 import {runTasks} from "../lib/ecs";
 import {SubmitJobRequest} from "aws-sdk/clients/batch";
+import {UserData} from "aws-cdk-lib/aws-ec2";
 
 const {
     INSTANCE_PROFILE_NAME,
@@ -46,12 +47,12 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "taskName is empty"}, 400);
     }
 
-    if (!task.compute) {
-        return jsonResponse({msg: "compute is empty"}, 400);
-    }
-
     if (!["EC2", "Lambda", "Fargate", "Batch"].includes(task.compute)) {
         return jsonResponse({msg: `compute must be in ${["EC2", "Lambda", "Fargate", "Batch"].join(',')}`}, 400);
+    }
+
+    if (!["API", "HTML"].includes(task.taskType)) {
+        return jsonResponse({msg: `taskType must be in ${["API", "HTML"].join(',')}`}, 400);
     }
 
     if (task.compute === "EC2") {
@@ -73,7 +74,7 @@ export const handler = ApiHandler(async (_evt) => {
 
     task.taskType = task.taskType.toUpperCase();
 
-    if (!task.url || !task.timeout) {
+    if (!task.url || !task.timeoutMs) {
         return jsonResponse({msg: "url, timeout is empty"}, 400);
     }
 
@@ -123,18 +124,9 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "qps must be greater than 0 and be integer"}, 400);
     }
 
-    // delay must be greater than 0 and be integer
-    if (task.delay !== undefined && (task.delay <= 0 || !Number.isInteger(task.delay))) {
-        return jsonResponse({msg: "delay must be greater than 0 and be integer"}, 400);
-    }
-
-    if (task.timeout === undefined) {
-        task.timeout = 1000;
-    }
-
     // timeout must be greater than 0 and be integer
-    if (task.timeout <= 0 || !Number.isInteger(task.timeout)) {
-        return jsonResponse({msg: "timeout must be greater than 0 and be integer"}, 400);
+    if (task.timeoutMs <= 0 || !Number.isInteger(task.timeoutMs)) {
+        return jsonResponse({msg: "timeoutMs must be greater than 0 and be integer"}, 400);
     }
 
     if (!Object.values(HttpStatusCode).includes(task.successCode)) {
@@ -362,7 +354,7 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
         MinCount: 1,
         MaxCount: 1,
         KeyName: task.KeyName,
-        UserData: Buffer.from(bootScript).toString('base64'),
+        UserData: UserData.custom(bootScript).render(),
         IamInstanceProfile: {
             Name: INSTANCE_PROFILE_NAME,
         },

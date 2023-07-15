@@ -20,7 +20,7 @@ export interface Task {
     report: boolean;
     taskName: string;
     taskId: string;
-    taskType: string;
+    taskType: "API" | "HTML";
     taskClient?: number;
     url: string;
     method: "GET" | "POST" | "PUT" | string;
@@ -35,8 +35,7 @@ export interface Task {
     regions: string[];
     region: string;
     currentStateMachineExecutedLeft?: number,
-    delay?: number;
-    timeout: number;
+    timeoutMs: number;
     successCode: HttpStatusCode;
     startTime: string;
     createdAt: string;

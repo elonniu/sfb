@@ -12,6 +12,14 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/chromedp/chromedp"
+)
+
+type TaskType string
+
+const (
+	TaskTypeApi  TaskType = "API"
+	TaskTypeHtml TaskType = "HTML"
 )
 
 type HttpMethod string
@@ -42,9 +50,8 @@ type Task struct {
 	Report                          bool
 	TaskName                        string
 	TaskId                          string
-	TaskType                        string
+	TaskType                        TaskType
 	TaskClient                      *int
-	TaskStep                        *int
 	URL                             string
 	Method                          HttpMethod
 	Compute                         ComputeType
@@ -58,8 +65,7 @@ type Task struct {
 	Regions                         []string
 	Region                          string
 	CurrentStateMachineExecutedLeft *int
-	Delay                           *int
-	Timeout                         int
+	TimeoutMs                       time.Duration
 	SuccessCode                     HttpStatusCode
 	StartTime                       string
 	CreatedAt                       string
@@ -148,8 +154,6 @@ func ProcessTask(task Task) {
 			for i := 0; i < times; i++ {
 				FetchAndMeasure(task)
 			}
-		} else {
-			FetchAndMeasure(task)
 		}
 	} else {
 		fmt.Println("URL does not exist in JSON or is not a string")
@@ -159,9 +163,27 @@ func ProcessTask(task Task) {
 
 func FetchAndMeasure(task Task) {
 
+	if task.TaskType == TaskTypeApi {
+		FetchAndMeasureApi(task)
+	}
+
+	if task.TaskType == TaskTypeHtml {
+		FetchAndMeasureHtml(task)
+	}
+
+}
+
+func FetchAndMeasureApi(task Task) {
+	timeout := task.TimeoutMs / 1000
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
 	start := time.Now()
 
-	resp, err := http.Get(task.URL)
+	req, _ := http.NewRequest(http.MethodGet, task.URL, nil)
+	req = req.WithContext(ctx)
+	resp, err := http.DefaultClient.Do(req)
+
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -169,5 +191,30 @@ func FetchAndMeasure(task Task) {
 	defer resp.Body.Close()
 
 	duration := time.Since(start)
-	fmt.Printf("The network latency for the url %s is %s\n", task.URL, duration)
+
+	fmt.Printf("The network latency for the url %s is %s %d\n", task.URL, duration, resp.StatusCode)
+
+}
+
+func FetchAndMeasureHtml(task Task) {
+	timeout := task.TimeoutMs / 1000
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	ctx, cancel = chromedp.NewContext(ctx)
+	defer cancel()
+
+	start := time.Now()
+
+	var buf []byte
+	err := chromedp.Run(ctx, chromedp.Tasks{
+		chromedp.Navigate(task.URL),
+		chromedp.CaptureScreenshot(&buf),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	loadTime := time.Since(start)
+	log.Printf("Page loaded in: %s", loadTime)
 }

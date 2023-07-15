@@ -137,13 +137,6 @@ export function Stack({stack}: StackContext) {
         primaryIndex: {partitionKey: "taskId"},
     });
 
-    const logsTable = new Table(stack, "logs", {
-        fields: {
-            id: "string",
-        },
-        primaryIndex: {partitionKey: "id"},
-    });
-
     const ipTable = new Table(stack, "ip", {
         fields: {
             ip: "string",
@@ -154,7 +147,7 @@ export function Stack({stack}: StackContext) {
     const apiFunction = new Function(stack, "apiFunction", {
         functionName: `${stack.stackName}-apiFunction`,
         handler: "packages/functions/src/test/api.handler",
-        bind: [logsTable, ipTable]
+        bind: [ipTable]
     });
 
     const taskFunction = new Function(stack, "taskFunction", {
@@ -162,6 +155,7 @@ export function Stack({stack}: StackContext) {
         handler: "resources/golang/main.go",
         runtime: "go1.x",
         architecture: "x86_64",
+        bind: [bucket]
     });
 
     const topic = new Topic(stack, "Topic", {
@@ -174,8 +168,11 @@ export function Stack({stack}: StackContext) {
         functionName: `${stack.stackName}-sfRequestFunction`,
         handler: "packages/functions/src/sf/request.handler",
         memorySize: 4048,
-        permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData'],
-        bind: [logsTable, topic],
+        permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData', 'lambda:InvokeFunction'],
+        bind: [topic],
+        environment: {
+            taskFunction: taskFunction.functionName
+        }
     });
 
     const requestLambdaTask = new LambdaInvoke(stack, 'Invoke Request Lambda', {
@@ -352,7 +349,7 @@ export function Stack({stack}: StackContext) {
         },
     });
 
-    taskFunction.bind([logsTable, topic]);
+    taskFunction.bind([bucket, topic]);
 
     const api = new Api(stack, "api", {
         routes: {
@@ -372,7 +369,6 @@ export function Stack({stack}: StackContext) {
         stack: stackUrl(stack.stackId, stack.region),
         taskTable: ddbUrl(taskTable.tableName, stack.region),
         bucket: bucketUrl(bucket.bucketName, stack.region),
-        logsTable: ddbUrl(logsTable.tableName, stack.region),
         ipTable: ddbUrl(ipTable.tableName, stack.region),
         topic: topicUrl(topic.topicArn, stack.region),
         taskCreateFunction: lambdaUrl(taskCreateFunction.functionName, stack.region),
@@ -380,7 +376,7 @@ export function Stack({stack}: StackContext) {
         RequestStateMachine: sfUrl(requestStateMachine.stateMachineArn, stack.region),
         SfRequestFunction: lambdaUrl(sfRequestFunction.functionName, stack.region),
         taskDeleteFunction: lambdaUrl(taskDeleteFunction.functionName, stack.region),
+        taskFunction: lambdaUrl(taskFunction.functionName, stack.region),
     });
 
-    return {logsTable};
 }
