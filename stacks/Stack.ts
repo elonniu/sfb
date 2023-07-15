@@ -360,7 +360,6 @@ export function Stack({stack}: StackContext) {
             "DELETE /tasks/{id}": taskDeleteFunction,
             "PUT /tasks/{id}/abort": taskAbortFunction,
             "GET /api": apiFunction,
-            "GET /go": taskFunction,
         },
     });
 
