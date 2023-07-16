@@ -20,8 +20,8 @@ export interface Task {
     url: string;
     method: Method;
     compute: Compute;
-    KeyName?: string;
-    InstanceType?: string;
+    keyName?: string;
+    instanceType?: string;
     qps?: number;
     n?: number;
     c: number;

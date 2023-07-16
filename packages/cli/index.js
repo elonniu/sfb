@@ -28,11 +28,60 @@ program
         if (taskId) {
             const res = await invoke('dev-serverless-bench-Stack-taskGetFunction', {taskId});
             show([res]);
+            const list = Object.entries(res.states).flatMap(([region, data]) =>
+                Object.entries(data).map(([arn, status]) => ({region, arn, status}))
+            );
+            list.forEach(item => {
+                item.jobUrl = stateUrl(item, res.compute);
+            });
+            table(list, ["status", "jobUrl"]);
         } else {
             const res = await invoke('dev-serverless-bench-Stack-taskListFunction');
             taskList(res.Items);
         }
     });
+
+function stateUrl(item, compute) {
+    switch (compute) {
+        case 'Lambda':
+            return executionUrl(item.arn, item.region);
+        case 'EC2':
+            return ec2Url(item.arn, item.region);
+        case 'Fargate':
+            return fargateUrl(item.arn, item.region);
+        case 'Batch':
+            return batchUrl(item.arn, item.region);
+        default:
+            return "";
+    }
+
+}
+
+function fargateUrl(arn, region) {
+    return `https://${region}.console.${awsDomain(region)}/ecs/v2/clusters/${arn.split('/')[1]}/tasks/${arn.split('/')[2]}/configuration?region=${region}&selectedContainer=TaskContainer`;
+}
+
+function batchUrl(arn, region) {
+    return `https://${region}.console.${awsDomain(region)}/batch/home?region=${region}#jobs/fargate/detail/${arn}`;
+}
+
+function executionUrl(arn, region) {
+    return `https://${region}.console.${awsDomain(region)}/states/home?region=${region}#/v2/executions/details/${arn}`;
+}
+
+function ec2Url(arn, region) {
+    return `https://${region}.console.${awsDomain(region)}/ec2/home?region=${region}#InstanceDetails:instanceId=${arn}`;
+}
+
+export function awsDomain(region) {
+
+    if (region && region.startsWith('cn')) {
+        return `amazonaws.cn`;
+    }
+
+    return `aws.amazon.com`;
+}
+
 
 program
     .command('rm [taskId]')
@@ -40,7 +89,7 @@ program
     .action(async (taskId) => {
         if (taskId) {
             const res = await invoke('dev-serverless-bench-Stack-taskDeleteFunction', {taskId});
-            taskList([res]);
+            taskList(res);
         } else {
             const res = await invoke('dev-serverless-bench-Stack-taskEmptyFunction');
             taskList(res);
@@ -60,7 +109,7 @@ program
     .description('List all deployed regions')
     .action(async () => {
         const res = await invoke('dev-serverless-bench-Stack-regionsFunction');
-        table([res], {currentRegion: 20, deployedRegions: 50});
+        table([res], ["currentRegion", "deployedRegions"]);
     });
 
 program
@@ -127,13 +176,14 @@ async function invoke(FunctionName, payload = undefined, tip = 'Completed!') {
     return result.data;
 }
 
-function table(data, colWidths) {
+function table(data, columnOrder = []) {
 
-    const head = Object.keys(colWidths).map(key => chalk.green(key));
+    const head = columnOrder !== []
+        ? columnOrder.map(key => chalk.green(key))
+        : Object.keys(data[0]).map(key => chalk.green(key));
 
     const table = new Table({
-        head,
-        colWidths: Object.values(colWidths),
+        head
     });
 
     data.forEach(item => {
@@ -157,6 +207,7 @@ function taskList(data) {
         const row = {
             taskId: item.taskId,
             name: item.name,
+            compute: item.compute,
             url: item.url,
             qpsOrN: (item.qps ? 'qps' : 'n' + ' ') + (item.qps ? item.qps : item.n),
             c: item.c,
@@ -167,16 +218,7 @@ function taskList(data) {
         list.push(row);
     });
 
-    table(list, {
-        taskId: 17,
-        name: 10,
-        status: 12,
-        qpsOrN: 10,
-        c: 5,
-        startTime: 26,
-        endTime: 26,
-        url: 30,
-    });
+    table(list, ["taskId", "name", "compute", "status", "qpsOrN", "c", "startTime", "endTime", "url"]);
 }
 
 async function update() {

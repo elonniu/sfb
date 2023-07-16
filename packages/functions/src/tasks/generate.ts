@@ -109,10 +109,10 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
 
     const runInstanceParams: RunInstancesRequest = {
         ImageId: 'ami-0b94777c7d8bfe7e3',
-        InstanceType: task.InstanceType,
+        InstanceType: task.instanceType,
         MinCount: 1,
         MaxCount: 1,
-        KeyName: task.KeyName,
+        KeyName: task.keyName,
         UserData: Buffer.from(bootScript).toString('base64'),
         IamInstanceProfile: {
             Name: INSTANCE_PROFILE_NAME,
@@ -162,11 +162,7 @@ async function createJobs(task: Task, region: string) {
 
     let res = await batch.submitJob(params).promise();
 
-    list[res.jobArn] = "WAITING"
-
-    for (let i = 0; i < task.c; i++) {
-        list[`${res.jobArn}:${i}`] = "WAITING"
-    }
+    list[res.jobId] = "WAITING"
 
     return list;
 }

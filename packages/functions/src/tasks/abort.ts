@@ -1,8 +1,7 @@
-import {sortKeys} from "sst-helper";
 import {batchStopExecutions} from "../lib/sf";
 import {batchStopEc2s} from "../lib/ec2";
 import {batchStopTasks} from "../lib/ecs";
-import {getTaskGlobal} from "../common";
+import {bad, getTaskGlobal, ok} from "../common";
 import {batchTerminateJobs} from "../lib/batch";
 
 const region = process.env.AWS_REGION || "";
@@ -21,13 +20,9 @@ export async function handler(event: any) {
             await batchStopExecutions(globalTasks);
         }
 
-        return sortKeys({
-            message: "Task aborted",
-        });
+        return ok(globalTasks);
     } catch (e: any) {
-        return sortKeys({
-            error: e.message
-        });
+        return bad(e);
     }
 
 }

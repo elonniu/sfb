@@ -47,12 +47,12 @@ async function checkTask(task: Task) {
 
     if (task.compute === "EC2") {
 
-        if (!task.KeyName) {
+        if (!task.keyName) {
             throw new Error("KeyName must be set when compute is EC2");
         }
 
-        if (!task.InstanceType) {
-            task.InstanceType = 't2.micro';
+        if (!task.instanceType) {
+            task.instanceType = 't2.micro';
         }
 
     }

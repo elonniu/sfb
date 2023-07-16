@@ -46,28 +46,26 @@ type Execution struct {
 }
 
 type Task struct {
-	ShouldEnd    bool
-	Report       bool
-	Name         string
-	TaskId       string
-	Type         TaskType
-	Client       *int
-	URL          string
-	Method       HttpMethod
-	Compute      ComputeType
-	KeyName      *string
-	InstanceType *string
-	QPS          *int
-	N            *int
-	C            int
-	Regions      []string
-	Region       string
-	NPerClient   *int
-	Timeout      time.Duration
-	SuccessCode  HttpStatusCode
-	StartTime    string
-	CreatedAt    string
-	EndTime      string
+	ShouldEnd   bool
+	Report      bool
+	Name        string
+	TaskId      string
+	Type        TaskType
+	Client      *int
+	URL         string
+	Method      HttpMethod
+	Compute     ComputeType
+	QPS         *int
+	N           *int
+	C           int
+	Regions     []string
+	Region      string
+	NPerClient  *int
+	Timeout     time.Duration
+	SuccessCode HttpStatusCode
+	StartTime   string
+	CreatedAt   string
+	EndTime     string
 }
 
 func main() {
