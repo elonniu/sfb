@@ -205,14 +205,12 @@ export function Stack({stack}: StackContext) {
         functionName: `${stack.stackName}-taskGenerateFunction`,
         handler: "packages/functions/src/tasks/generate.handler",
         permissions: [
-            'ec2:describeRegions',
             'ec2:runInstances',
             'ec2:CreateTags',
             'ecs:RunTask',
             'iam:PassRole',
             'states:StartExecution',
             'dynamodb:PutItem',
-            'cloudformation:DescribeStacks',
         ],
         memorySize: 2048,
         bind: [taskTable],
@@ -239,6 +237,7 @@ export function Stack({stack}: StackContext) {
         functionName: `${stack.stackName}-CreateTask`,
         handler: "packages/functions/src/tasks/create.handler",
         permissions: [
+            'ec2:describeRegions',
             'cloudformation:DescribeStacks',
             'lambda:InvokeFunction'
         ],

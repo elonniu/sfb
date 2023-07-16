@@ -35,7 +35,7 @@ program
             list.forEach(item => {
                 item.jobUrl = stateUrl(item, res.compute);
             });
-            table(list, ["status", "jobUrl"]);
+            table(list, ["region", "status", "jobUrl"]);
         } else {
             const res = await invoke('serverless-bench-Stack-taskListFunction');
             taskList(res.Items);
@@ -90,10 +90,14 @@ program
     .option('--success-code <number>', 'Success code')
     .option('--start-time <string>', 'Start time')
     .option('--end-time <string>', 'End time')
+    .option('--regions <string>', 'Target regions, example: us-east-1,us-west-2')
     .action(async (task) => {
         if (!task.qps && !task.n) {
             console.error('Error: the --qps or --n option is required');
             process.exit(1);
+        }
+        if (task.regions) {
+            task.regions = task.regions.split(',');
         }
         const res = await invoke('serverless-bench-Stack-CreateTask', task);
         taskList([res]);
@@ -132,7 +136,12 @@ async function invoke(FunctionName, payload = undefined, tip = 'Completed!') {
 
         return result.data;
     } catch (e) {
-        spinner.fail(e.message);
+        if (e.message.indexOf('Function not found') !== -1) {
+            spinner.fail(`Your need deploy the serverless-bench first.`);
+        } else {
+            spinner.fail(e.message);
+        }
+
         process.exit(1);
     }
 

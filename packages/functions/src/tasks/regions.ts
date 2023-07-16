@@ -9,7 +9,7 @@ export async function handler() {
     try {
         const list = await getStackDeployments();
         for (const stack of list) {
-            stack.url = stackUrl(stack.StackId, current_region);
+            stack.url = stackUrl(stack.StackId, stack.region);
         }
         return ok(list);
 

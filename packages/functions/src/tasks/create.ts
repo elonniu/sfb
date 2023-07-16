@@ -192,8 +192,7 @@ async function checkTask(task: Task) {
             throw new Error("regions must be less than 5");
         }
 
-        const deployRegions = await checkStackDeployment(task.regions);
-        // list task.regions are not in deployRegions
+        const deployRegions = await checkStackDeployment();
         const notDeployRegions = task.regions.filter((region) => !deployRegions.includes(region));
         if (notDeployRegions.length > 0) {
             if (deployRegions.length > 0) {
