@@ -45,6 +45,7 @@ program
         }
         options.region && args.push(`--region=${options.region}`);
         options.profile && args.push(`--profile=${options.profile}`);
+        args.push(`--stage=prod`);
         const child = spawn('npm',
             ['run', 'deploy', '--', ...args],
             {stdio: 'inherit', cwd: getRoot()}
@@ -64,6 +65,7 @@ program
         }
         options.region && args.push(`--region=${options.region}`);
         options.profile && args.push(`--profile=${options.profile}`);
+        args.push(`--stage=prod`);
         const child = spawn('npm',
             ['run', 'remove', '--', ...args],
             {stdio: 'inherit', cwd: getRoot()}
