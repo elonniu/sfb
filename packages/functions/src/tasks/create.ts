@@ -1,6 +1,6 @@
-import {nanoid, sortKeys} from "sst-helper";
+import {nanoid} from "sst-helper";
 import AWS from "aws-sdk";
-import {Task} from "../common";
+import {bad, ok, Task} from "../common";
 import {HttpStatusCode} from "axios";
 import {checkStackDeployment} from "../lib/cf";
 import process from "process";
@@ -16,9 +16,9 @@ export async function handler(event: Task) {
     try {
         const task = await checkTask(event);
         await dispatchTask(task);
-        return sortKeys(task);
+        return ok(task);
     } catch (e: any) {
-        return sortKeys({msg: e.message});
+        return bad(e);
     }
 
 }
@@ -29,16 +29,16 @@ async function checkTask(task: Task) {
         task.report = true;
     }
 
-    if (!task.taskName) {
-        throw new Error("taskName is empty");
+    if (!task.name) {
+        throw new Error("name is empty");
     }
 
     if (!["EC2", "Lambda", "Fargate", "Batch"].includes(task.compute)) {
         throw new Error(`compute must be in ${["EC2", "Lambda", "Fargate", "Batch"].join(',')}`);
     }
 
-    if (!["API", "HTML"].includes(task.taskType)) {
-        throw new Error(`taskType must be in ${["API", "HTML"].join(',')}`);
+    if (!["API", "HTML"].includes(task.type)) {
+        throw new Error(`type must be in ${["API", "HTML"].join(',')}`);
     }
 
     if (task.compute === "EC2") {
@@ -53,18 +53,31 @@ async function checkTask(task: Task) {
 
     }
 
-    if (!task.taskType) {
-        throw new Error("taskType is empty");
+    if (!task.type) {
+        throw new Error("type is empty");
     }
 
-    if (!task.url || !task.timeoutMs) {
-        throw new Error("url, timeout is empty");
+    if (!task.url) {
+        throw new Error("url is empty");
     }
 
     try {
         new URL(task.url);
     } catch (e) {
         throw new Error("url is invalid");
+    }
+
+    if (task.timeout === undefined) {
+        task.timeout = 5000;
+    } else {
+        task.timeout = parseInt(task.timeout.toString());
+        if (task.timeout < 100) {
+            throw new Error("timeout must be greater than 100 ms");
+        }
+    }
+
+    if (!task.method) {
+        task.method = "GET";
     }
 
     if (!["GET", "POST"].includes(task.method)) {
@@ -81,22 +94,22 @@ async function checkTask(task: Task) {
         throw new Error("n and qps can not be both set");
     }
 
-    // n must be greater than 0 and be integer
-    if (task.n !== undefined && (task.n <= 0 || !Number.isInteger(task.n))) {
-        throw new Error("n must be greater than 0 and be integer");
+    if (task.n !== undefined) {
+        task.n = parseInt(task.n.toString());
+        if (task.n <= 0) {
+            throw new Error("n must be greater than 0");
+        }
     }
 
     if (task.c === undefined) {
         task.c = 1;
+    } else {
+        if (task.c <= 0) {
+            throw new Error("c must be greater than 0");
+        }
     }
 
-    // c must be greater than 0 and be integer
-    if ((task.c <= 0 || !Number.isInteger(task.c))) {
-        throw new Error("c must be greater than 0 and be integer");
-    }
-
-    // c must be less than n
-    if (task.c !== undefined && task.n !== undefined && task.c > task.n) {
+    if (task.n !== undefined && task.c > task.n) {
         throw new Error("c must be less than n");
     }
 
@@ -104,18 +117,28 @@ async function checkTask(task: Task) {
         task.nPerClient = Math.ceil(task.n / task.c);
     }
 
-    // qps must be greater than 0 and be integer
-    if (task.qps !== undefined && (task.qps <= 0 || !Number.isInteger(task.qps))) {
-        throw new Error("qps must be greater than 0 and be integer");
+    if (task.qps !== undefined) {
+        task.qps = parseInt(task.qps.toString());
+        if (task.qps <= 0) {
+            throw new Error("qps must be greater than 0");
+        }
     }
 
-    // timeout must be greater than 0 and be integer
-    if (task.timeoutMs <= 0 || !Number.isInteger(task.timeoutMs)) {
-        throw new Error("timeoutMs must be greater than 0 and be integer");
+
+    if (task.delay !== undefined) {
+        task.delay = parseInt(task.delay.toString());
+        if (task.delay <= 1) {
+            throw new Error("delay must be greater than 1 ms");
+        }
     }
 
-    if (!Object.values(HttpStatusCode).includes(task.successCode)) {
-        throw new Error(`successCode must be in [${Object.values(HttpStatusCode).join(',')}]`);
+    if (task.successCode === undefined) {
+        task.successCode = 200;
+    } else {
+        task.successCode = parseInt(task.successCode.toString());
+        if (!Object.values(HttpStatusCode).includes(task.successCode)) {
+            throw new Error(`successCode must be in [${Object.values(HttpStatusCode).join(',')}]`);
+        }
     }
 
     // the startTime and endTime must be time string and greater than now
@@ -127,8 +150,8 @@ async function checkTask(task: Task) {
         }
         task.startTime = new Date(new Date(task.startTime).getTime()).toISOString();
     } else {
-        if (task.taskDelaySeconds) {
-            task.startTime = new Date(new Date().getTime() + task.taskDelaySeconds * 1000).toISOString();
+        if (task.delay) {
+            task.startTime = new Date(new Date().getTime() + task.delay * 1000).toISOString();
         } else {
             task.startTime = new Date().toISOString();
         }
@@ -177,7 +200,7 @@ async function checkTask(task: Task) {
         }
     }
 
-    task.taskId = nanoid();
+    task.taskId = nanoid(15);
     task.createdAt = new Date().toISOString();
 
     const {
@@ -194,9 +217,9 @@ async function checkTask(task: Task) {
         startTime,
         successCode,
         taskId,
-        taskName,
-        taskType,
-        timeoutMs,
+        name,
+        type,
+        timeout,
         url
     } = task;
 
@@ -214,9 +237,9 @@ async function checkTask(task: Task) {
         startTime,
         successCode,
         taskId,
-        taskName,
-        taskType,
-        timeoutMs,
+        name,
+        type,
+        timeout,
         url
     } as Task;
 }

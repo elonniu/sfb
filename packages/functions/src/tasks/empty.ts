@@ -4,7 +4,7 @@ import {batchDelete, dynamoDb} from "../lib/ddb";
 import {batchStopExecutions} from "../lib/sf";
 import {batchStopEc2s} from "../lib/ec2";
 import {batchStopTasks} from "../lib/ecs";
-import {getTaskGlobal} from "../common";
+import {bad, getTaskGlobal, ok} from "../common";
 import {batchTerminateJobs} from "../lib/batch";
 
 const TableName = Table.tasks.tableName;
@@ -35,13 +35,9 @@ export async function handler(event: any) {
             }
         }
 
-        return sortKeys({
-            message: "Task empty success",
-        });
+        return ok(data.Items);
     } catch (e: any) {
-        return sortKeys({
-            error: e.message
-        });
+        return bad(e);
     }
 
 }

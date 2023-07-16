@@ -1,5 +1,4 @@
-import {sortKeys} from "sst-helper";
-import {getTaskGlobal} from "../common";
+import {bad, getTaskGlobal, ok} from "../common";
 
 const region = process.env.AWS_REGION || "";
 
@@ -19,11 +18,9 @@ export async function handler(event: any) {
             task.states[globalTask.region] = globalTask.states;
         }
 
-        return sortKeys(task);
+        return ok(task);
     } catch (e: any) {
-        return sortKeys({
-            error: e.message
-        });
+        return bad(e);
     }
 
 }

@@ -1,15 +1,9 @@
 import {HttpStatusCode} from "axios";
-import {Arn} from "aws-sdk/clients/stepfunctions";
 import {Table} from "sst/node/table";
 import AWS from "aws-sdk";
 import {batchGet, dynamoDb} from "./lib/ddb";
-
-export interface Execution {
-    executionArn: Arn;
-    startDate: string;
-    status?: string;
-    executionUrl?: string;
-}
+import {sortKeys} from "sst-helper";
+import console from "console";
 
 export type TaskType = "API" | "HTML";
 export type Method = "GET" | "POST" | "PUT";
@@ -18,10 +12,10 @@ export type Compute = "Lambda" | "EC2" | "Fargate" | "Batch";
 export interface Task {
     shouldEnd: boolean;
     report: boolean;
-    taskName: string;
+    name: string;
     taskId: string;
-    taskType: TaskType;
-    taskClient?: number;
+    type: TaskType;
+    client?: number;
     url: string;
     method: Method;
     compute: Compute;
@@ -30,12 +24,11 @@ export interface Task {
     qps?: number;
     n?: number;
     c: number;
-    taskDelaySeconds?: number;
-    runInstanceBatch?: number;
+    delay?: number;
     regions: string[];
     region: string;
     nPerClient?: number,
-    timeoutMs: number;
+    timeout: number;
     successCode: HttpStatusCode;
     startTime: string;
     createdAt: string;
@@ -110,4 +103,13 @@ export async function updateTaskState(taskId: string, arn: string, status: strin
         console.log(`updateTaskState error: ${e.message}`);
     }
 
+}
+
+export function ok(data: any) {
+    return sortKeys({success: true, data})
+}
+
+export function bad(e: any) {
+    console.log(e);
+    return sortKeys({success: false, msg: e.message})
 }

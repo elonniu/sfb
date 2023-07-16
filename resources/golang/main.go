@@ -46,30 +46,28 @@ type Execution struct {
 }
 
 type Task struct {
-	ShouldEnd        bool
-	Report           bool
-	TaskName         string
-	TaskId           string
-	TaskType         TaskType
-	TaskClient       *int
-	URL              string
-	Method           HttpMethod
-	Compute          ComputeType
-	KeyName          *string
-	InstanceType     *string
-	QPS              *int
-	N                *int
-	C                int
-	TaskDelaySeconds *int
-	RunInstanceBatch *int
-	Regions          []string
-	Region           string
-	NPerClient       *int
-	TimeoutMs        time.Duration
-	SuccessCode      HttpStatusCode
-	StartTime        string
-	CreatedAt        string
-	EndTime          string
+	ShouldEnd    bool
+	Report       bool
+	Name         string
+	TaskId       string
+	Type         TaskType
+	Client       *int
+	URL          string
+	Method       HttpMethod
+	Compute      ComputeType
+	KeyName      *string
+	InstanceType *string
+	QPS          *int
+	N            *int
+	C            int
+	Regions      []string
+	Region       string
+	NPerClient   *int
+	Timeout      time.Duration
+	SuccessCode  HttpStatusCode
+	StartTime    string
+	CreatedAt    string
+	EndTime      string
 }
 
 func main() {
@@ -162,20 +160,20 @@ func ProcessTask(task Task) {
 
 func FetchAndMeasure(task Task) {
 
-	task.TimeoutMs *= time.Millisecond
+	task.Timeout *= time.Millisecond
 
-	if task.TaskType == TaskTypeApi {
+	if task.Type == TaskTypeApi {
 		FetchAndMeasureApi(task)
 	}
 
-	if task.TaskType == TaskTypeHtml {
+	if task.Type == TaskTypeHtml {
 		FetchAndMeasureHtml(task)
 	}
 
 }
 
 func FetchAndMeasureApi(task Task) {
-	ctx, cancel := context.WithTimeout(context.Background(), task.TimeoutMs)
+	ctx, cancel := context.WithTimeout(context.Background(), task.Timeout)
 	defer cancel()
 
 	start := time.Now()
@@ -196,7 +194,7 @@ func FetchAndMeasureApi(task Task) {
 }
 
 func FetchAndMeasureHtml(task Task) {
-	ctx, cancel := context.WithTimeout(context.Background(), task.TimeoutMs)
+	ctx, cancel := context.WithTimeout(context.Background(), task.Timeout)
 	defer cancel()
 
 	ctx, cancel = chromedp.NewContext(ctx)

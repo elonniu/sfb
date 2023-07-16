@@ -75,15 +75,13 @@ export async function runInstancesBatch(region: string, items: RunInstancesReque
 
 export async function runInstances(task: Task, region: string, item: RunInstancesRequest) {
 
-    if (!task.runInstanceBatch) {
-        task.runInstanceBatch = 20;
-    }
+    const batch = 20;
 
     let MaxCount = task.c;
 
     let InstanceIds = {};
 
-    if (MaxCount <= task.runInstanceBatch) {
+    if (MaxCount <= batch) {
 
         const runInstanceParams: RunInstancesRequest = {
             ...item,
@@ -97,7 +95,7 @@ export async function runInstances(task: Task, region: string, item: RunInstance
         let runInstanceParamsList: RunInstancesRequest[] = [];
 
         while (MaxCount > 0) {
-            let subtracted = (MaxCount >= task.runInstanceBatch) ? task.runInstanceBatch : MaxCount;
+            let subtracted = (MaxCount >= batch) ? batch : MaxCount;
             runInstanceParamsList.push({
                 ...item,
                 MaxCount: subtracted,

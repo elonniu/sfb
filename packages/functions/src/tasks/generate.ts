@@ -123,7 +123,7 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
                 Tags: [
                     {
                         Key: "Name",
-                        Value: `${SST_APP}-${SST_STAGE}-${task.taskName}-${task.qps ? 'qps' : 'n'}`
+                        Value: `${SST_APP}-${SST_STAGE}-${task.name}-${task.qps ? 'qps' : 'n'}`
                     },
                     {
                         Key: "TaskId",
@@ -144,7 +144,7 @@ async function createJobs(task: Task, region: string) {
     const batch = new AWS.Batch({region});
 
     const params: SubmitJobRequest = {
-        jobName: `${SST_APP}-${SST_STAGE}-${task.taskName}-${task.qps ? 'qps' : 'n'}-${task.taskId}`,
+        jobName: `${SST_APP}-${SST_STAGE}-${task.name}-${task.qps ? 'qps' : 'n'}-${task.taskId}`,
         jobDefinition: JOB_DEFINITION || "",
         jobQueue: JOB_QUEUE || "",
         arrayProperties: {
@@ -208,14 +208,14 @@ async function createSf(task: Task, region: string) {
     let sfExe: StartExecutionInput[] = [];
 
     for (let i = 0; i < task.c; i++) {
-        const taskClient = i + 1;
+        const client = i + 1;
         sfExe.push({
-            name: `${task.qps ? 'qps' : 'n'}_${task.taskName}_${task.taskId}_${taskClient}`,
+            name: `${task.qps ? 'qps' : 'n'}_${task.name}_${task.taskId}_${client}`,
             stateMachineArn: requestStateMachineArn.replace(current_region, region),
             input: JSON.stringify({
                 Payload: {
                     ...task,
-                    taskClient,
+                    client,
                     shouldEnd: false,
                 },
             }),

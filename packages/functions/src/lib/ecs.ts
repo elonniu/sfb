@@ -39,17 +39,17 @@ export async function batchStopTasks(globalTasks: any[]) {
 
 export async function runTasks(task: Task, region: string, item: RunTaskRequest) {
 
-    const runInstanceBatch = 10;
+    const batch = 10;
 
-    let MaxCount = task.c;
+    let count = task.c;
 
     let InstanceIds = {};
 
-    if (MaxCount <= runInstanceBatch) {
+    if (count <= batch) {
 
         const runInstanceParams: RunTaskRequest = {
             ...item,
-            count: MaxCount,
+            count: count,
         };
 
         InstanceIds = await runTasksBatch(region, [runInstanceParams]);
@@ -58,13 +58,13 @@ export async function runTasks(task: Task, region: string, item: RunTaskRequest)
 
         let runInstanceParamsList: RunTaskRequest[] = [];
 
-        while (MaxCount > 0) {
-            let subtracted = (MaxCount >= runInstanceBatch) ? runInstanceBatch : MaxCount;
+        while (count > 0) {
+            let subtracted = (count >= batch) ? batch : count;
             runInstanceParamsList.push({
                 ...item,
                 count: subtracted,
             });
-            MaxCount -= subtracted;
+            count -= subtracted;
         }
 
         InstanceIds = await runTasksBatch(region, runInstanceParamsList);

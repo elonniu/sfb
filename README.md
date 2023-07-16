@@ -30,90 +30,47 @@ pnpm run deploy --region <your-region>
 pnpm run down --region <your-region>
 ```
 
-### 2.5 Get API Gateway URL from the output
+## 3. Manage Tasks by CLi
+
+### 3.1 Link CLI
 
 ```bash
-Deployed:
-Stack
-ApiEndpoint: https://{your-api-url}
+npm link
+ibench help
 ```
 
-### 2.6 Test the API Gateway URL
-
-### 2.6.1 QPS Task
+### 3.2 Create Task
 
 ```bash
-curl --location 'https://{your-endpoint}/tasks' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "taskName": "test",
-    "taskType": "API",
-    "report": true,
-    "url": "https://{your-api}",
-    "method": "GET",
-    "timeoutMS": 10000,
-    "startTime": "2023-07-01T18:25:37.000+08:00",
-    "endTime": "2023-07-01T18:40:37.000+08:00",
-    "qps": 1,
-    "regions": [
-        "ap-southeast-1",
-        "us-east-1"
-    ],
-    "successCode": 200
-}'
-
+ibench create --n 1 --name 11 --delay 10 --compute Lambda --type API --url http://api.com
 ```
 
-### 2.6.2 Batch Task
+### 3.3 List Tasks
 
 ```bash
-curl --location 'https://{your-endpoint}/tasks' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "taskName": "test",
-    "taskType": "API",
-    "report": true,
-    "url": "https://{your-api}",
-    "method": "GET",
-    "n": 5,
-    "timeoutMS": 10000,
-    "startTime": "2023-07-01T18:25:37.000+08:00",
-    "endTime": "2023-07-01T18:40:37.000+08:00",
-    "regions": [
-        "ap-southeast-1",
-        "us-east-1"
-    ],
-    "successCode": 200
-}'
-
+ibench ls [taskId]
 ```
 
-### 2.6.3 Batch & Client Task
+### 3.4 Remove Tasks
 
 ```bash
-curl --location 'https://{your-endpoint}/tasks' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "taskName": "test",
-    "taskType": "API",
-    "report": true,
-    "url": "https://{your-api}",
-    "method": "GET",
-    "n": 1,
-    "c": 1,
-    "timeoutMS": 10000,
-    "startTime": "2023-07-01T18:25:37.000+08:00",
-    "endTime": "2023-07-01T18:40:37.000+08:00",
-    "regions": [
-        "ap-southeast-1",
-        "us-east-1"
-    ],
-    "successCode": 200
-}'
-
+ibench rm [taskId]
 ```
 
-## 3. What are the benefits of using Serverless?
+### 3.5 Abort Tasks
+
+```bash
+ibench abort <taskId>
+```
+
+### 3.6 List Deployed Regions
+
+```bash
+ibench regions
+```
+
+
+## 4. What are the benefits of using Serverless?
 
 - Pay as you go: only pay for the time your code is running
 - No server management: no need to worry about the infrastructure
@@ -130,13 +87,13 @@ curl --location 'https://{your-endpoint}/tasks' \
 - Native support for versioning: version control
 - Native support for ESM settings: batch size, retry, etc.
 
-# 4. How to compute the cost?
+# 5. How to compute the cost?
 
 - https://aws.amazon.com/lambda/pricing/
 - https://aws.amazon.com/step-functions/pricing/
 - https://aws.amazon.com/sns/pricing/
 
-# 5. How to get cost-effective / high performance?
+# 6. How to get cost-effective / high performance?
 
 - Optimize the bootstrap time for cold start
 - Use the right memory size

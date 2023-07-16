@@ -1,7 +1,6 @@
-import {sortKeys} from "sst-helper";
 import AWS from "aws-sdk";
 import {Table} from "sst/node/table";
-import {Task} from "../common";
+import {bad, ok, Task} from "../common";
 
 const TableName = Table.tasks.tableName;
 const region = process.env.AWS_REGION || "";
@@ -20,26 +19,10 @@ export async function handler(task: Task) {
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
 
-        // data.Items && data.Items.forEach((item: any) => {
-        //     item.status = "SUCCEEDED";
-        //     item.states && item.states.forEach((state: any) => {
-        //         if (state.status === "WAITING") {
-        //             item.status = "WAITING";
-        //         }
-        //         if (state.status === "RUNNING") {
-        //             item.status = "RUNNING";
-        //         }
-        //     });
-        // });
-
-        return sortKeys({
-            ...data
-        });
+        return ok(data);
     } catch (e: any) {
         console.error(e);
-        return sortKeys({
-            msg: e.message
-        });
+        return bad(e);
     }
 
 }
