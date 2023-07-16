@@ -124,6 +124,7 @@ program
     .command('regions')
     .description('List deployed regions')
     .action(async (options) => {
+        await update();
         const stage = program.opts().stage ? program.opts().stage : 'prod';
         const spinner = ora('Waiting...').start();
         const res = await lambdaExistsInAllRegions(stage + '-serverless-bench-Stack-taskAbortFunction');
