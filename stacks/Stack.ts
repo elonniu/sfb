@@ -1,4 +1,4 @@
-import {Api, Bucket, EventBus, Function, StackContext, Table, Topic} from "sst/constructs";
+import {Bucket, EventBus, Function, StackContext, Table, Topic} from "sst/constructs";
 import {bucketUrl, ddbUrl, lambdaUrl, sfUrl, stackUrl, topicUrl} from "sst-helper";
 import {Choice, Condition, JsonPath, Pass, StateMachine, TaskInput} from 'aws-cdk-lib/aws-stepfunctions';
 import {LambdaInvoke} from 'aws-cdk-lib/aws-stepfunctions-tasks';
@@ -133,19 +133,6 @@ export function Stack({stack}: StackContext) {
             taskId: "string",
         },
         primaryIndex: {partitionKey: "taskId"},
-    });
-
-    const ipTable = new Table(stack, "ip", {
-        fields: {
-            ip: "string",
-        },
-        primaryIndex: {partitionKey: "ip"},
-    });
-
-    const apiFunction = new Function(stack, "apiFunction", {
-        functionName: `${stack.stackName}-apiFunction`,
-        handler: "packages/functions/src/test/api.handler",
-        bind: [ipTable]
     });
 
     const taskFunction = new Function(stack, "taskFunction", {
@@ -373,21 +360,12 @@ export function Stack({stack}: StackContext) {
         },
     });
 
-    const api = new Api(stack, "api", {
-        routes: {
-            "GET /api": apiFunction,
-        },
-    });
-
     stack.addOutputs({
-        ApiEndpoint: api.url,
         stack: stackUrl(stack.stackId, stack.region),
         taskTable: ddbUrl(taskTable.tableName, stack.region),
         bucket: bucketUrl(bucket.bucketName, stack.region),
-        ipTable: ddbUrl(ipTable.tableName, stack.region),
         topic: topicUrl(topic.topicArn, stack.region),
         taskCreateFunction: lambdaUrl(taskCreateFunction.functionName, stack.region),
-        apiFunction: lambdaUrl(apiFunction.functionName, stack.region),
         RequestStateMachine: sfUrl(requestStateMachine.stateMachineArn, stack.region),
         SfRequestFunction: lambdaUrl(sfRequestFunction.functionName, stack.region),
         taskFunction: lambdaUrl(taskFunction.functionName, stack.region),
