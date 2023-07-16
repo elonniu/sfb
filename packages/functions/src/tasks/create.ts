@@ -11,14 +11,14 @@ const {
     TASK_GENERATE_FUNCTION
 } = process.env;
 
-export async function handler(event: Task) {
+export async function handler(event: Task, context: any) {
 
     try {
         const task = await checkTask(event);
         await dispatchTask(task);
         return ok(task);
     } catch (e: any) {
-        return bad(e);
+        return bad(e, context);
     }
 
 }

@@ -1,4 +1,3 @@
-import {sortKeys} from "sst-helper";
 import {Table} from "sst/node/table";
 import {batchDelete, dynamoDb} from "../lib/ddb";
 import {batchStopExecutions} from "../lib/sf";
@@ -10,7 +9,7 @@ import {batchTerminateJobs} from "../lib/batch";
 const TableName = Table.tasks.tableName;
 const region = process.env.AWS_REGION || "";
 
-export async function handler(event: any) {
+export async function handler(event: any, context: any) {
 
     try {
 
@@ -37,7 +36,7 @@ export async function handler(event: any) {
 
         return ok(data.Items);
     } catch (e: any) {
-        return bad(e);
+        return bad(e, context);
     }
 
 }

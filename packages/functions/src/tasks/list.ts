@@ -5,7 +5,7 @@ import {bad, ok, Task} from "../common";
 const TableName = Table.tasks.tableName;
 const region = process.env.AWS_REGION || "";
 
-export async function handler(task: Task) {
+export async function handler(task: Task, context: any) {
 
     const dynamodb = new AWS.DynamoDB.DocumentClient({region});
 
@@ -21,7 +21,7 @@ export async function handler(task: Task) {
         return ok(data);
     } catch (e: any) {
         console.error(e);
-        return bad(e);
+        return bad(e, context);
     }
 
 }

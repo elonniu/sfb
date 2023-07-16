@@ -30,7 +30,6 @@ const {
 } = process.env;
 
 export async function handler(task: Task) {
-
     task.region = current_region;
 
     if (task.compute === "EC2") {

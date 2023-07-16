@@ -10,7 +10,6 @@ import {spawn} from 'child_process';
 import {InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
 import {batchJobUrl, currentVersion, ec2InstanceUrl, executionUrl, fargateTaskUrl, getRoot} from "sst-helper";
 
-const client = new LambdaClient();
 const program = new Command();
 
 program
@@ -165,13 +164,16 @@ if (!process.argv.slice(2).length) {
     program.help();
 }
 
-async function invoke(FunctionName, payload = undefined, tip = 'Completed!') {
+async function invoke(Name, payload = undefined, tip = 'Completed!') {
+
+    const client = new LambdaClient({region: program.opts().region});
 
     const spinner = ora('Waiting...').start();
     const stage = program.opts().stage ? program.opts().stage : 'prod';
+    const FunctionName = stage + '-' + Name;
 
     const params = {
-        FunctionName: stage + '-' + FunctionName,
+        FunctionName,
         Payload: payload ? JSON.stringify(payload) : undefined,
         InvocationType: "RequestResponse",
     };
@@ -184,7 +186,10 @@ async function invoke(FunctionName, payload = undefined, tip = 'Completed!') {
         const result = JSON.parse(new TextDecoder("utf-8").decode(response.Payload));
 
         if (result.success === false) {
-            spinner.fail(result.msg);
+            spinner.fail(chalk.red(result.msg + " in " + FunctionName));
+            if (result.log) {
+                console.log(chalk.yellow("Log: " + result.log));
+            }
             process.exit(1);
         }
 
@@ -230,6 +235,7 @@ function taskList(data) {
     }
 
     let list = [];
+
     data.forEach(item => {
         const row = {
             taskId: item.taskId,

@@ -2,8 +2,9 @@ import {HttpStatusCode} from "axios";
 import {Table} from "sst/node/table";
 import AWS from "aws-sdk";
 import {batchGet, dynamoDb} from "./lib/ddb";
-import {sortKeys} from "sst-helper";
+import {lambdaLogUrl, sortKeys} from "sst-helper";
 import console from "console";
+import process from "process";
 
 export type TaskType = "API" | "HTML";
 export type Method = "GET" | "POST" | "PUT";
@@ -128,7 +129,20 @@ export function ok(data: any) {
     return sortKeys({success: true, data})
 }
 
-export function bad(e: any) {
-    console.log(e);
-    return sortKeys({success: false, msg: e.message})
+export function bad(e: any, context: any = undefined) {
+    console.log({e, context});
+    return sortKeys({
+        success: false,
+        msg: e.message,
+        code: e.code,
+        log: getLambdaLogUrl(context)
+    })
+}
+
+export function getLambdaLogUrl(context: any = undefined) {
+    if (context === undefined) {
+        return context;
+    }
+
+    return lambdaLogUrl(context, process.env.AWS_REGION);
 }

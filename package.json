@@ -1,6 +1,6 @@
 {
   "name": "ibench",
-  "version": "0.0.22",
+  "version": "0.0.26",
   "type": "module",
   "license": "Apache-2.0",
   "bin": {
@@ -27,7 +27,7 @@
     "packages/*"
   ],
   "dependencies": {
-    "sst-helper": "0.0.71",
+    "sst-helper": "0.0.72",
     "axios": "^1.4.0",
     "typescript": "^5.1.6",
     "constructs": "10.1.156",

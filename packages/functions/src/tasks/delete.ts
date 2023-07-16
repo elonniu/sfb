@@ -9,7 +9,7 @@ import {batchTerminateJobs} from "../lib/batch";
 const TableName = Table.tasks.tableName;
 const region = process.env.AWS_REGION || "";
 
-export async function handler(event: any) {
+export async function handler(event: any, context: any) {
 
     const {taskId} = event;
 
@@ -26,7 +26,7 @@ export async function handler(event: any) {
 
         return ok(globalTasks);
     } catch (e: any) {
-        return bad(e);
+        return bad(e, context);
     }
 
 }
