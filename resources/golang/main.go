@@ -80,7 +80,7 @@ func main() {
 		var task Task
 		err := json.Unmarshal([]byte(envJson), &task)
 		if err != nil {
-			log.Fatalf("Error unmarshaling task from environment variable: %v", err)
+			fmt.Println(err)
 		}
 		ProcessTask(task)
 	}
@@ -101,7 +101,7 @@ func HandleSNSEvent(ctx context.Context, snsEvent events.SNSEvent) error {
 }
 
 func ProcessTask(task Task) {
-	// print task as json string
+
 	taskJson, _ := json.Marshal(task)
 	fmt.Println(string(taskJson))
 
@@ -185,7 +185,7 @@ func FetchAndMeasureApi(task Task) {
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println(err)
 		return
 	}
 	defer resp.Body.Close()
@@ -193,7 +193,6 @@ func FetchAndMeasureApi(task Task) {
 	duration := time.Since(start)
 
 	fmt.Printf("The network latency for the url %s is %s %d\n", task.URL, duration, resp.StatusCode)
-
 }
 
 func FetchAndMeasureHtml(task Task) {
@@ -211,7 +210,8 @@ func FetchAndMeasureHtml(task Task) {
 		chromedp.CaptureScreenshot(&buf),
 	})
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		return
 	}
 
 	loadTime := time.Since(start)

@@ -57,9 +57,7 @@ export async function runInstancesBatch(region: string, items: RunInstancesReque
 
                 item.Instances?.forEach((instance) => {
                     if (instance.InstanceId) {
-                        InstanceIds[instance.InstanceId] = {
-                            status: "WAITING",
-                        };
+                        InstanceIds[instance.InstanceId] = "WAITING";
                     }
                 });
 

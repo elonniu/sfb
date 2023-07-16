@@ -307,7 +307,7 @@ export function Stack({stack}: StackContext) {
                     source: ["aws.states"],
                     detailType: ["Step Functions Execution Status Change"],
                     detail: {
-                        executionArn: [requestStateMachine.stateMachineArn]
+                        stateMachineArn: [requestStateMachine.stateMachineArn]
                     }
                 },
                 targets: {
@@ -330,6 +330,9 @@ export function Stack({stack}: StackContext) {
                 pattern: {
                     source: ["aws.batch"],
                     detailType: ["Batch Job State Change"],
+                    detail: {
+                        jobDefinition: [jobDefinition.ref]
+                    }
                 },
                 targets: {
                     myTarget1: batchJobStateChangeLambda,

@@ -63,19 +63,23 @@ export async function handler(event: any) {
             }
             if (task.c > 1) {
 
-                await lambda.invoke({
-                    FunctionName: taskFunction,
-                    Payload: JSON.stringify({
-                        Records: [
-                            {
-                                SNS: {
-                                    Message: JSON.stringify({...task, c: 1, n: 1})
+                try {
+                    await lambda.invoke({
+                        FunctionName: taskFunction,
+                        Payload: JSON.stringify({
+                            Records: [
+                                {
+                                    SNS: {
+                                        Message: JSON.stringify({...task, c: 1, n: 1})
+                                    }
                                 }
-                            }
-                        ]
-                    }),
-                    InvocationType: 'RequestResponse'
-                }).promise();
+                            ]
+                        }),
+                        InvocationType: 'RequestResponse'
+                    }).promise();
+                } catch (e) {
+                    console.log(e);
+                }
 
                 if (task.nPerClient !== undefined) {
                     task.nPerClient--;

@@ -97,9 +97,7 @@ async function runTasksBatch(region: string, items: RunTaskRequest[]) {
             data.forEach((item, index) => {
                 item.tasks?.forEach((task) => {
                     if (task.taskArn) {
-                        InstanceIds[task.taskArn] = {
-                            status: "WAITING"
-                        };
+                        InstanceIds[task.taskArn] = "WAITING";
                     }
                 });
             });

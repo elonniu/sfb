@@ -1,6 +1,5 @@
 import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
-import {executionUrl} from "sst-helper";
 
 async function batchStopExecutionsByRegion(executionArn: string, region: string) {
     const stepFunctions = new AWS.StepFunctions({region});
@@ -65,10 +64,7 @@ export async function startExecutionBatch(region: string, items: StartExecutionI
     await batchWriteParallel(items)
         .then((data) => {
             data.forEach((item, index) => {
-                list[item.executionArn] = {
-                    status: "WAITING",
-                    url: executionUrl(item.executionArn, region)
-                };
+                list[item.executionArn] = "WAITING";
             });
         })
         .catch((error) => {

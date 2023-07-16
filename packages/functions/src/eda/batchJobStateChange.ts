@@ -8,7 +8,6 @@ export async function handler(event: any) {
         if (env.name === "TASK") {
             const task = JSON.parse(env.value) as Task;
             await updateTaskState(task.taskId, jobArn, status);
-
         }
     }
 

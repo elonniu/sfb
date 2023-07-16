@@ -405,10 +405,10 @@ async function createJobs(task: Task, region: string) {
 
     let res = await batch.submitJob(params).promise();
 
-    list[res.jobArn] = {
-        jobId: res.jobId,
-        jobName: res.jobName,
-        status: "WAITING"
+    list[res.jobArn] = "WAITING"
+
+    for (let i = 0; i < task.c; i++) {
+        list[`${res.jobArn}:${i}`] = "WAITING"
     }
 
     return list;

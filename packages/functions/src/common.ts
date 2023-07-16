@@ -102,5 +102,11 @@ export async function updateTaskState(taskId: string, arn: string, status: strin
         ReturnValues: 'UPDATED_NEW'
     };
 
-    await dynamoDb.update(params).promise();
+    try {
+        await dynamoDb.update(params).promise();
+    } catch (e: any) {
+        console.log({taskId, arn, status});
+        console.log(`updateTaskState error: ${e.message}`);
+    }
+
 }

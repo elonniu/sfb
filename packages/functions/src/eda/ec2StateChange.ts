@@ -4,6 +4,7 @@ import {updateTaskState} from "../common";
 const ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
 
 export async function handler(event: any) {
+
     const {detail} = event;
 
     // get TagSpecifications from ec2 instance
@@ -22,7 +23,6 @@ export async function handler(event: any) {
         for (const tag of Tags) {
             if (tag.Key === "TaskId") {
                 const taskId = tag.Value || "";
-
                 await updateTaskState(taskId, detail["instance-id"], detail.state);
             }
         }
