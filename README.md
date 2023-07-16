@@ -10,32 +10,32 @@ This is a tool for bench testing by AWS Serverless.
 
 - `node -v` >= v16.16.0
 - `npm -v` >= 9.6.6
+- `docker -v` >= 24.0.2
+- `go version` >= go1.20.5
 
-### 2.2 Install the dependencies
+### 2.2 Install the CLI
 
 ```bash
-npm i -g pnpm
-pnpm i
+npm i -g ibench
 ```
 
 ### 2.3 Deploy the stack
 
 ```bash
-pnpm run deploy --region <your-region>
+ibench deploy --region <your-region>
 ```
 
 ### 2.4 Remove the stack
 
 ```bash
-pnpm run down --region <your-region>
+ibench remove --region <your-region>
 ```
 
 ## 3. Manage Tasks by CLi
 
-### 3.1 Link CLI
+### 3.1 Help
 
 ```bash
-npm link
 ibench help
 ```
 
@@ -68,7 +68,6 @@ ibench abort <taskId>
 ```bash
 ibench regions
 ```
-
 
 ## 4. What are the benefits of using Serverless?
 

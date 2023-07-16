@@ -1,9 +1,13 @@
 {
-  "name": "serverless-bench",
-  "version": "0.0.1",
-  "private": true,
+  "name": "ibench",
+  "version": "0.0.11",
+  "private": false,
   "type": "module",
   "license": "Apache-2.0",
+  "bin": {
+    "ibench": "./packages/cli/index.js",
+    "sst": "./node_modules/sst/cli/sst.js"
+  },
   "scripts": {
     "dev": "sst dev",
     "build": "sst build",
@@ -11,20 +15,31 @@
     "deploy": "sst deploy --stage prod",
     "down": "sst remove --stage prod",
     "console": "sst console",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "release": "npm publish --registry=https://registry.npmjs.org"
   },
   "devDependencies": {
-    "@tsconfig/node16": "^16.1.0",
-    "aws-cdk-lib": "2.84.0",
-    "constructs": "10.1.156",
-    "sst": "2.21.5",
-    "typescript": "^5.1.6"
+    "@tsconfig/node16": "^16.1.0"
   },
   "workspaces": [
     "packages/*"
   ],
   "dependencies": {
+    "typescript": "^5.1.6",
+    "constructs": "10.1.156",
+    "aws-cdk-lib": "2.84.0",
+    "sst": "2.21.8",
     "sst-helper": "0.0.65",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "@aws-sdk/client-lambda": "^3.370.0",
+    "aws-sdk": "^2.1408.0",
+    "axios": "^1.4.0",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.3",
+    "commander": "^11.0.0",
+    "inquirer": "^9.2.8",
+    "ora": "^6.3.1",
+    "shelljs": "^0.8.5",
+    "strip-ansi": "^7.1.0"
   }
 }

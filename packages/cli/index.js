@@ -1,19 +1,77 @@
 #! /usr/bin/env node
 
-import {program} from 'commander';
+import {Command} from 'commander';
 import ora from 'ora';
 import Table from 'cli-table3';
 import chalk from 'chalk';
 import axios from 'axios';
 import stripAnsi from 'strip-ansi';
-
+import {execSync, spawn} from 'child_process';
+import {promises as fs} from 'fs';
 import {InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
 
 const client = new LambdaClient();
+const program = new Command();
 
 program
-    .version('0.0.1')
-    .option('--stage <string>', 'stage option');
+    .version(await currentVersion())
+    .option('--stage <string>', 'stage option')
+    .option('--region <string>', 'AWS region')
+    .option('--profile <string>', 'AWS profile');
+
+function getRoot() {
+    return execSync('npm root -g').toString().trim() + '/ibench';
+}
+
+program
+    .command('dev')
+    .description('Run the dev script')
+    .action(() => {
+        const options = program.opts();
+        const args = [];
+        options.region && args.push(`--region=${options.region}`);
+        options.profile && args.push(`--profile=${options.profile}`);
+        const child = spawn('npm',
+            ['run', 'dev', '--', ...args],
+            {stdio: 'inherit', cwd: getRoot()}
+        );
+    });
+
+program
+    .command('deploy')
+    .description('Deploy the app in a region')
+    .action(() => {
+        const options = program.opts();
+        const args = [];
+        if (!options.region) {
+            console.error('Error: the --region option is required');
+            process.exit(1);
+        }
+        options.region && args.push(`--region=${options.region}`);
+        options.profile && args.push(`--profile=${options.profile}`);
+        const child = spawn('npm',
+            ['run', 'deploy', '--', ...args],
+            {stdio: 'inherit', cwd: getRoot()}
+        );
+    });
+
+program
+    .command('remove')
+    .description('Remove the app from a region')
+    .action(async (task) => {
+        const options = program.opts();
+        const args = [];
+        if (!options.region) {
+            console.error('Error: the --region option is required');
+            process.exit(1);
+        }
+        options.region && args.push(`--region=${options.region}`);
+        options.profile && args.push(`--profile=${options.profile}`);
+        const child = spawn('npm',
+            ['run', 'remove', '--', ...args],
+            {stdio: 'inherit', cwd: getRoot()}
+        );
+    });
 
 program
     .command('update')
@@ -74,8 +132,8 @@ program
 program
     .command('create')
     .description('Create a task')
-    .option('--type <string>', 'Task type')
     .requiredOption('--name <string>', 'Task name (required)')
+    .option('--type <string>', 'Task type')
     .option('--report <boolean>', 'Report')
     .option('--url <string>', 'URL')
     .option('--method <string>', 'Method, default GET')
@@ -197,7 +255,7 @@ async function update() {
         const response = await axios.get('https://registry.npmjs.org/ibench');
         const serverVersion = response.data['dist-tags'].latest;
         if (serverVersion !== program.version()) {
-            console.log(chalk.yellow(`A new version of the tool is available. Please update to version ${serverVersion} by running the command: npm install -g ibench`));
+            console.log(chalk.yellow(`A new version ${chalk.green(serverVersion)} is available. Please update by running the command: ${chalk.blue('npm install -g ibench')}`));
         } else {
             console.log('You are using the latest version of the CLI: ' + chalk.green(`${serverVersion}`));
         }
@@ -268,4 +326,10 @@ export function awsDomain(region) {
     }
 
     return `aws.amazon.com`;
+}
+
+async function currentVersion() {
+    const packages = getRoot() + '/package.json';
+    const packageData = await fs.readFile(packages, 'utf-8');
+    return JSON.parse(packageData).version;
 }
