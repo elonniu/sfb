@@ -46,30 +46,30 @@ type Execution struct {
 }
 
 type Task struct {
-	ShouldEnd                       bool
-	Report                          bool
-	TaskName                        string
-	TaskId                          string
-	TaskType                        TaskType
-	TaskClient                      *int
-	URL                             string
-	Method                          HttpMethod
-	Compute                         ComputeType
-	KeyName                         *string
-	InstanceType                    *string
-	QPS                             *int
-	N                               *int
-	C                               int
-	TaskDelaySeconds                *int
-	RunInstanceBatch                *int
-	Regions                         []string
-	Region                          string
-	CurrentStateMachineExecutedLeft *int
-	TimeoutMs                       time.Duration
-	SuccessCode                     HttpStatusCode
-	StartTime                       string
-	CreatedAt                       string
-	EndTime                         string
+	ShouldEnd        bool
+	Report           bool
+	TaskName         string
+	TaskId           string
+	TaskType         TaskType
+	TaskClient       *int
+	URL              string
+	Method           HttpMethod
+	Compute          ComputeType
+	KeyName          *string
+	InstanceType     *string
+	QPS              *int
+	N                *int
+	C                int
+	TaskDelaySeconds *int
+	RunInstanceBatch *int
+	Regions          []string
+	Region           string
+	NPerClient       *int
+	TimeoutMs        time.Duration
+	SuccessCode      HttpStatusCode
+	StartTime        string
+	CreatedAt        string
+	EndTime          string
 }
 
 func main() {
@@ -150,8 +150,7 @@ func ProcessTask(task Task) {
 				}
 			}
 		} else if task.N != nil {
-			times := *task.N / task.C
-			for i := 0; i < times; i++ {
+			for i := 0; i < *task.NPerClient; i++ {
 				FetchAndMeasure(task)
 			}
 		}

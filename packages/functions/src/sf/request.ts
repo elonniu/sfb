@@ -77,9 +77,9 @@ export async function handler(event: any) {
                     InvocationType: 'RequestResponse'
                 }).promise();
 
-                if (task.currentStateMachineExecutedLeft !== undefined) {
-                    task.currentStateMachineExecutedLeft--;
-                    if (task.currentStateMachineExecutedLeft === 0) {
+                if (task.nPerClient !== undefined) {
+                    task.nPerClient--;
+                    if (task.nPerClient === 0) {
                         return {shouldEnd: true};
                     }
                 }

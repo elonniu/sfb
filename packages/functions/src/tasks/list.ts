@@ -22,18 +22,17 @@ export const handler = ApiHandler(async (_evt) => {
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
 
-        data.Items && data.Items.forEach((item: any) => {
-            item.status = "SUCCEEDED";
-            item.states && item.states.forEach((state: any) => {
-                state.executionUrl = executionUrl(state.executionArn, region);
-                if (state.status === "WAITING") {
-                    item.status = "WAITING";
-                }
-                if (state.status === "RUNNING") {
-                    item.status = "RUNNING";
-                }
-            });
-        });
+        // data.Items && data.Items.forEach((item: any) => {
+        //     item.status = "SUCCEEDED";
+        //     item.states && item.states.forEach((state: any) => {
+        //         if (state.status === "WAITING") {
+        //             item.status = "WAITING";
+        //         }
+        //         if (state.status === "RUNNING") {
+        //             item.status = "RUNNING";
+        //         }
+        //     });
+        // });
 
         return jsonResponse({
             ...data

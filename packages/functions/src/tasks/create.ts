@@ -13,7 +13,6 @@ import {runInstances} from "../lib/ec2";
 import {RunTaskRequest} from "aws-sdk/clients/ecs";
 import {runTasks} from "../lib/ecs";
 import {SubmitJobRequest} from "aws-sdk/clients/batch";
-import {UserData} from "aws-cdk-lib/aws-ec2";
 
 const {
     INSTANCE_PROFILE_NAME,
@@ -36,33 +35,46 @@ export const handler = ApiHandler(async (_evt) => {
 
     let task: Task = JSON.parse(_evt.body || "{}");
 
-    // get sourceIp
     if (_evt.requestContext.http.sourceIp !== process.env.SOURCE_IP) {
         return jsonResponse({msg: "sourceIp is not allowed"}, 400);
     }
 
-    task.createdAt = new Date().toISOString();
+    try {
+        task = await checkTasks(task);
+        const states = await dispatchTask(task);
+        return jsonResponse({
+            ...task,
+            states,
+        });
+
+    } catch (e: any) {
+        return jsonResponse({msg: e.message}, 500);
+    }
+
+});
+
+async function checkTasks(task: Task) {
 
     if (task.report) {
         task.report = true;
     }
 
     if (!task.taskName) {
-        return jsonResponse({msg: "taskName is empty"}, 400);
+        throw new Error("taskName is empty");
     }
 
     if (!["EC2", "Lambda", "Fargate", "Batch"].includes(task.compute)) {
-        return jsonResponse({msg: `compute must be in ${["EC2", "Lambda", "Fargate", "Batch"].join(',')}`}, 400);
+        throw new Error(`compute must be in ${["EC2", "Lambda", "Fargate", "Batch"].join(',')}`);
     }
 
     if (!["API", "HTML"].includes(task.taskType)) {
-        return jsonResponse({msg: `taskType must be in ${["API", "HTML"].join(',')}`}, 400);
+        throw new Error(`taskType must be in ${["API", "HTML"].join(',')}`);
     }
 
     if (task.compute === "EC2") {
 
         if (!task.KeyName) {
-            return jsonResponse({msg: "KeyName must be set when compute is EC2"}, 400);
+            throw new Error("KeyName must be set when compute is EC2");
         }
 
         if (!task.InstanceType) {
@@ -71,42 +83,37 @@ export const handler = ApiHandler(async (_evt) => {
 
     }
 
-
     if (!task.taskType) {
-        return jsonResponse({msg: "taskType is empty"}, 400);
+        throw new Error("taskType is empty");
     }
-
-    task.taskType = task.taskType.toUpperCase();
 
     if (!task.url || !task.timeoutMs) {
-        return jsonResponse({msg: "url, timeout is empty"}, 400);
+        throw new Error("url, timeout is empty");
     }
 
-    // validate url
     try {
         new URL(task.url);
     } catch (e) {
-        return jsonResponse({msg: "url is invalid"}, 400);
+        throw new Error("url is invalid");
     }
 
-    if (!task.method) {
-        return jsonResponse({msg: "method is empty"}, 400);
+    if (!["GET", "POST"].includes(task.method)) {
+        throw new Error(`method must be in ${["GET", "POST"].join(',')}`);
     }
-    task.method = task.method.toUpperCase();
 
     // n and qps can not be both empty
     if (task.n === undefined && task.qps === undefined) {
-        return jsonResponse({msg: "n and qps can not be both empty"}, 400);
+        throw new Error("n and qps can not be both empty");
     }
 
     // n and qps can not be both set
     if (task.n !== undefined && task.qps !== undefined) {
-        return jsonResponse({msg: "n and qps can not be both set"}, 400);
+        throw new Error("n and qps can not be both set");
     }
 
     // n must be greater than 0 and be integer
     if (task.n !== undefined && (task.n <= 0 || !Number.isInteger(task.n))) {
-        return jsonResponse({msg: "n must be greater than 0 and be integer"}, 400);
+        throw new Error("n must be greater than 0 and be integer");
     }
 
     if (task.c === undefined) {
@@ -115,26 +122,30 @@ export const handler = ApiHandler(async (_evt) => {
 
     // c must be greater than 0 and be integer
     if ((task.c <= 0 || !Number.isInteger(task.c))) {
-        return jsonResponse({msg: "c must be greater than 0 and be integer"}, 400);
+        throw new Error("c must be greater than 0 and be integer");
     }
 
     // c must be less than n
     if (task.c !== undefined && task.n !== undefined && task.c > task.n) {
-        return jsonResponse({msg: "c must be less than n"}, 400);
+        throw new Error("c must be less than n");
+    }
+
+    if (task.n && task.c) {
+        task.nPerClient = Math.ceil(task.n / task.c);
     }
 
     // qps must be greater than 0 and be integer
     if (task.qps !== undefined && (task.qps <= 0 || !Number.isInteger(task.qps))) {
-        return jsonResponse({msg: "qps must be greater than 0 and be integer"}, 400);
+        throw new Error("qps must be greater than 0 and be integer");
     }
 
     // timeout must be greater than 0 and be integer
     if (task.timeoutMs <= 0 || !Number.isInteger(task.timeoutMs)) {
-        return jsonResponse({msg: "timeoutMs must be greater than 0 and be integer"}, 400);
+        throw new Error("timeoutMs must be greater than 0 and be integer");
     }
 
     if (!Object.values(HttpStatusCode).includes(task.successCode)) {
-        return jsonResponse({msg: `successCode must be in [${Object.values(HttpStatusCode).join(',')}]`}, 400);
+        throw new Error(`successCode must be in [${Object.values(HttpStatusCode).join(',')}]`);
     }
 
     // the startTime and endTime must be time string and greater than now
@@ -142,7 +153,7 @@ export const handler = ApiHandler(async (_evt) => {
     if (task.startTime) {
         // startTime must be greater than now - 1 hours
         if (now - 3600 * 1000 > new Date(task.startTime).getTime()) {
-            return jsonResponse({msg: "startTime must be greater than now - 1 hours"}, 400);
+            throw new Error("startTime must be greater than now - 1 hours");
         }
         task.startTime = new Date(new Date(task.startTime).getTime()).toISOString();
     } else {
@@ -155,7 +166,7 @@ export const handler = ApiHandler(async (_evt) => {
 
     if (task.endTime) {
         if (now > new Date(task.endTime).getTime()) {
-            return jsonResponse({msg: "endTime must be greater than now"}, 400);
+            throw new Error("endTime must be greater than now");
         }
         task.endTime = new Date(new Date(task.endTime).getTime()).toISOString();
     } else {
@@ -164,15 +175,17 @@ export const handler = ApiHandler(async (_evt) => {
 
     // endTime must be greater than startTime
     if (new Date(task.startTime).getTime() > new Date(task.endTime).getTime()) {
-        return jsonResponse({msg: "endTime must be greater than startTime"}, 400);
+        throw new Error("endTime must be greater than startTime");
     }
 
     // endTime must be less than startTime + 48 hours
     if (new Date(task.startTime).getTime() + 3600 * 48 * 1000 < new Date(task.endTime).getTime()) {
-        return jsonResponse({msg: "endTime must be less than startTime + 48 hours"}, 400);
+        throw new Error("endTime must be less than startTime + 48 hours");
     }
 
-    task.taskId = nanoid();
+    if (task.compute === "Batch" && task.c < 2) {
+        throw new Error("Batch compute c must be greater than 1")
+    }
 
     if (!task.regions) {
         task.regions = [current_region];
@@ -181,29 +194,15 @@ export const handler = ApiHandler(async (_evt) => {
         // list task.regions are not in deployRegions
         const notDeployRegions = task.regions.filter((region) => !deployRegions.includes(region));
         if (notDeployRegions.length > 0) {
-            return jsonResponse({
-                msg: `ServerlessBench not in [${notDeployRegions.join(', ')}] yet, available regions [${deployRegions.join(', ')}]`
-            }, 400);
+            throw new Error(`ServerlessBench not in [${notDeployRegions.join(', ')}] yet, available regions [${deployRegions.join(', ')}]`);
         }
     }
 
-    try {
-        const start = Date.now();
-        const states = await dispatchTask(task);
-        const end = Date.now();
+    task.taskId = nanoid();
+    task.createdAt = new Date().toISOString();
 
-        return jsonResponse({
-            createTaskLatency: Number(end.toString()) - Number(start.toString()),
-            ...task,
-            states,
-            nPerClient: (task.n && task.c) ? Math.ceil(task.n / task.c) : undefined,
-        });
-
-    } catch (e: any) {
-        return jsonResponse({msg: e.message}, 500);
-    }
-
-});
+    return task;
+}
 
 async function dispatchTask(task: Task) {
 
@@ -239,8 +238,6 @@ async function dispatchTask(task: Task) {
     }
 
     return statesList;
-
-
 }
 
 async function createSf(task: Task, region: string) {
@@ -256,7 +253,6 @@ async function createSf(task: Task, region: string) {
                 Payload: {
                     ...task,
                     taskClient,
-                    currentStateMachineExecutedLeft: task.n ? Math.ceil(task.n / task.c) : undefined,
                     shouldEnd: false,
                 },
             }),
@@ -299,8 +295,6 @@ async function createEcsTasks(task: Task, region: string) {
 }
 
 async function createEc2(task: Task, region: string) {
-    const request_count = (task.n && task.c) ? Math.ceil(task.n / task.c) : task.n;
-
     const start_time = Math.round(new Date(task.startTime).getTime() / 1000);
     const end_time = Math.round(new Date(task.endTime).getTime() / 1000);
 
@@ -311,7 +305,7 @@ async function createEc2(task: Task, region: string) {
 url="${task.url}"
 start_time=${start_time}
 end_time=${end_time}
-request_count=${request_count}
+nPerClient=${task.nPerClient}
 qps=${task.qps || ""}
 taskId=${task.taskId}
 logfile=/tmp/log.${task.taskId}.txt
@@ -328,7 +322,7 @@ done
 
 if [[ -z "$qps" || ! $qps =~ ^[0-9]+$ ]]
 then
-  for (( i=0; i<request_count; i++ )); do
+  for (( i=0; i<nPerClient; i++ )); do
     get_utc_time=$(date -u '+%Y-%m-%dT%H:%M:%S.%3NZ')
     curl -o /dev/null -s $url -w "$taskId $INSTANCE_ID $get_utc_time %{http_code} %{time_total}\\n" >> $logfile
   done
@@ -358,7 +352,7 @@ aws ec2 terminate-instances --instance-ids $INSTANCE_ID
         MinCount: 1,
         MaxCount: 1,
         KeyName: task.KeyName,
-        UserData: UserData.custom(bootScript).render(),
+        UserData: Buffer.from(bootScript).toString('base64'),
         IamInstanceProfile: {
             Name: INSTANCE_PROFILE_NAME,
         },

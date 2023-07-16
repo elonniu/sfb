@@ -23,7 +23,7 @@
     "packages/*"
   ],
   "dependencies": {
-    "sst-helper": "0.0.61",
+    "sst-helper": "0.0.65",
     "ts-node": "^10.9.1"
   }
 }

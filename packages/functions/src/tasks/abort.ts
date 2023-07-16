@@ -26,7 +26,6 @@ export const handler = ApiHandler(async (_evt) => {
 
         return jsonResponse({
             message: "task aborted",
-            tasks: globalTasks
         });
     } catch (e: any) {
         return jsonResponse({

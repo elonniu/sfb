@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       sst-helper:
-        specifier: 0.0.61
-        version: 0.0.61
+        specifier: 0.0.65
+        version: 0.0.65
       ts-node:
         specifier: ^10.9.1
         version: 10.9.1(@types/node@20.3.2)(typescript@5.1.6)
@@ -5556,8 +5556,8 @@ packages:
       fsevents: 2.3.2
     dev: true
 
-  /sst-helper@0.0.61:
-    resolution: {integrity: sha512-gwixYt8HqHNKbPXw/oRdvHvcmsZ8q4Bq71c4My+/1FXZ0bFxuXumSRyC4TLBm+1sqMxu+rEfE6DpNdUujh6lEg==}
+  /sst-helper@0.0.65:
+    resolution: {integrity: sha512-Ey1i9oh3Ay/b4/SDcl2Rmxi6PZ3LV8Q8Tn0xseNmflbCW7QInH4FpLGppVOAVqmc0LBTJ8NXjbQOORK7D8l79Q==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
     dependencies:
       '@slack/webhook': 6.1.0

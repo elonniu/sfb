@@ -30,7 +30,6 @@ export const handler = ApiHandler(async (_evt) => {
 
         return jsonResponse({
             message: "task deleted",
-            tasks: globalTasks
         });
     } catch (e: any) {
         return jsonResponse({

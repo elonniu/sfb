@@ -8,6 +8,8 @@ import {SecurityGroup, SubnetType, Vpc} from "aws-cdk-lib/aws-ec2";
 import * as batch from "aws-cdk-lib/aws-batch";
 import {Cluster, Compatibility, ContainerImage, LogDrivers, NetworkMode, TaskDefinition} from "aws-cdk-lib/aws-ecs";
 
+const dockerImage = 'public.ecr.aws/elonniu/serverless-bench:latest';
+
 export function Stack({stack}: StackContext) {
 
     const vpc = new Vpc(stack, "vpc", {
@@ -54,7 +56,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const container = ecsTaskDefinition.addContainer('TaskContainer', {
-        image: ContainerImage.fromRegistry("public.ecr.aws/elonniu/serverless-bench:latest"),
+        image: ContainerImage.fromRegistry(dockerImage),
         logging: LogDrivers.awsLogs({streamPrefix: 'TaskLogs'}),
     });
 
@@ -94,7 +96,7 @@ export function Stack({stack}: StackContext) {
         type: 'container',
         platformCapabilities: ['FARGATE'],
         containerProperties: {
-            image: "public.ecr.aws/elonniu/serverless-bench:latest",
+            image: dockerImage,
             resourceRequirements: [
                 {type: 'MEMORY', value: '2048'},  // value is in MiB
                 {type: 'VCPU', value: '1'}
@@ -207,14 +209,14 @@ export function Stack({stack}: StackContext) {
         functionName: `${stack.stackName}-taskCreateFunction`,
         handler: "packages/functions/src/tasks/create.handler",
         permissions: [
+            'ec2:describeRegions',
+            'ec2:runInstances',
+            'ec2:CreateTags',
+            'ecs:RunTask',
+            'iam:PassRole',
             'states:StartExecution',
             'dynamodb:PutItem',
-            'ec2:describeRegions',
-            'ec2:*',
-            'iam:*',
             'cloudformation:DescribeStacks',
-            'ecs:RunTask',
-            'ecs:RegisterTaskDefinition',
         ],
         memorySize: 2048,
         bind: [taskTable],

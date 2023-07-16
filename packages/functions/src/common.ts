@@ -15,16 +15,20 @@ export interface Execution {
     executionUrl?: string;
 }
 
+export type TaskType = "API" | "HTML";
+export type Method = "GET" | "POST" | "PUT";
+export type Compute = "Lambda" | "EC2" | "Fargate" | "Batch";
+
 export interface Task {
     shouldEnd: boolean;
     report: boolean;
     taskName: string;
     taskId: string;
-    taskType: "API" | "HTML";
+    taskType: TaskType;
     taskClient?: number;
     url: string;
-    method: "GET" | "POST" | "PUT" | string;
-    compute: "Lambda" | "EC2" | "Fargate" | "Batch";
+    method: Method;
+    compute: Compute;
     KeyName?: string;
     InstanceType?: string;
     qps?: number;
@@ -34,7 +38,7 @@ export interface Task {
     runInstanceBatch?: number;
     regions: string[];
     region: string;
-    currentStateMachineExecutedLeft?: number,
+    nPerClient?: number,
     timeoutMs: number;
     successCode: HttpStatusCode;
     startTime: string;
