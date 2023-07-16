@@ -1,14 +1,12 @@
-import {ApiHandler} from "sst/node/api";
-import {executionUrl, jsonResponse} from "sst-helper";
+import {sortKeys} from "sst-helper";
 import AWS from "aws-sdk";
 import {Table} from "sst/node/table";
+import {Task} from "../common";
 
 const TableName = Table.tasks.tableName;
-const current_region = process.env.AWS_REGION || "";
+const region = process.env.AWS_REGION || "";
 
-export const handler = ApiHandler(async (_evt) => {
-
-    const region = _evt.queryStringParameters?.region || current_region;
+export async function handler(task: Task) {
 
     const dynamodb = new AWS.DynamoDB.DocumentClient({region});
 
@@ -34,14 +32,14 @@ export const handler = ApiHandler(async (_evt) => {
         //     });
         // });
 
-        return jsonResponse({
+        return sortKeys({
             ...data
         });
     } catch (e: any) {
         console.error(e);
-        return jsonResponse({
+        return sortKeys({
             msg: e.message
         }, 500);
     }
 
-});
+}

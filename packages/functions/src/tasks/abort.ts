@@ -1,18 +1,15 @@
-import {ApiHandler} from "sst/node/api";
-import {jsonResponse} from "sst-helper";
+import {sortKeys} from "sst-helper";
 import {batchStopExecutions} from "../lib/sf";
 import {batchStopEc2s} from "../lib/ec2";
 import {batchStopTasks} from "../lib/ecs";
 import {getTaskGlobal} from "../common";
 import {batchTerminateJobs} from "../lib/batch";
 
-const current_region = process.env.AWS_REGION || "";
+const region = process.env.AWS_REGION || "";
 
-export const handler = ApiHandler(async (_evt) => {
+export async function handler(event: any) {
 
-    const region = _evt.queryStringParameters?.region || current_region;
-
-    const taskId = _evt.pathParameters?.id || "";
+    const {taskId} = event;
 
     try {
         const globalTasks = await getTaskGlobal(taskId, region);
@@ -24,13 +21,13 @@ export const handler = ApiHandler(async (_evt) => {
             await batchStopExecutions(globalTasks);
         }
 
-        return jsonResponse({
+        return sortKeys({
             message: "task aborted",
         });
     } catch (e: any) {
-        return jsonResponse({
+        return sortKeys({
             error: e.message
         });
     }
 
-});
+}

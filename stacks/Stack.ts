@@ -193,7 +193,7 @@ export function Stack({stack}: StackContext) {
         definition: checkRequestShouldEnd,
     });
 
-    const taskGetFunction = new Function(stack, "taskGetFunction", {
+    new Function(stack, "taskGetFunction", {
         functionName: `${stack.stackName}-taskGetFunction`,
         handler: "packages/functions/src/tasks/get.handler",
         permissions: ['dynamodb:GetItem'],
@@ -201,9 +201,9 @@ export function Stack({stack}: StackContext) {
         bind: [taskTable],
     });
 
-    const taskCreateFunction = new Function(stack, "taskCreateFunction", {
-        functionName: `${stack.stackName}-taskCreateFunction`,
-        handler: "packages/functions/src/tasks/create.handler",
+    const taskGenerateFunction = new Function(stack, "taskGenerateFunction", {
+        functionName: `${stack.stackName}-taskGenerateFunction`,
+        handler: "packages/functions/src/tasks/generate.handler",
         permissions: [
             'ec2:describeRegions',
             'ec2:runInstances',
@@ -217,11 +217,11 @@ export function Stack({stack}: StackContext) {
         memorySize: 2048,
         bind: [taskTable],
         environment: {
+            VPC_SUBNETS: JSON.stringify(vpcSubnets),
+            SECURITY_GROUP_ID: securityGroup.securityGroupId,
             REQUEST_SF_ARN: requestStateMachine.stateMachineArn,
             INSTANCE_PROFILE_NAME: ec2InstanceProfile.instanceProfileName || "",
             BUCKET_NAME: bucket.bucketName,
-            VPC_SUBNETS: JSON.stringify(vpcSubnets),
-            SECURITY_GROUP_ID: securityGroup.securityGroupId,
             TASK_DEFINITION_FAMILY: ecsTaskDefinition.family,
             CLUSTER_NAME: ecsCluster.clusterName,
             CLUSTER_ARN: ecsCluster.clusterArn,
@@ -230,12 +230,25 @@ export function Stack({stack}: StackContext) {
             JOB_QUEUE: jobQueue.ref,
         },
     });
-    taskCreateFunction.addToRolePolicy(new PolicyStatement({
+    taskGenerateFunction.addToRolePolicy(new PolicyStatement({
         actions: ['batch:SubmitJob'],
         resources: ['*'],
     }) as any);
 
-    const taskListFunction = new Function(stack, "taskListFunction", {
+    const taskCreateFunction = new Function(stack, "taskCreateFunction", {
+        functionName: `${stack.stackName}-CreateTask`,
+        handler: "packages/functions/src/tasks/create.handler",
+        permissions: [
+            'cloudformation:DescribeStacks',
+            'lambda:InvokeFunction'
+        ],
+        memorySize: 2048,
+        environment: {
+            TASK_GENERATE_FUNCTION: taskGenerateFunction.functionName,
+        },
+    });
+
+    new Function(stack, "taskListFunction", {
         functionName: `${stack.stackName}-taskListFunction`,
         handler: "packages/functions/src/tasks/list.handler",
         permissions: ['dynamodb:Scan'],
@@ -243,7 +256,7 @@ export function Stack({stack}: StackContext) {
         bind: [taskTable]
     });
 
-    const taskAbortFunction = new Function(stack, "taskAbortFunction", {
+    new Function(stack, "taskAbortFunction", {
         functionName: `${stack.stackName}-taskAbortFunction`,
         handler: "packages/functions/src/tasks/abort.handler",
         permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem', 'ec2:terminateInstances', 'ecs:stopTask', 'batch:terminateJob'],
@@ -254,7 +267,7 @@ export function Stack({stack}: StackContext) {
         }
     });
 
-    const taskDeleteFunction = new Function(stack, "taskDeleteFunction", {
+    new Function(stack, "taskDeleteFunction", {
         functionName: `${stack.stackName}-taskDeleteFunction`,
         handler: "packages/functions/src/tasks/delete.handler",
         permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances', 'ecs:stopTask', 'batch:terminateJob'],
@@ -265,7 +278,7 @@ export function Stack({stack}: StackContext) {
         }
     });
 
-    const taskEmptyFunction = new Function(stack, "taskEmptyFunction", {
+    new Function(stack, "taskEmptyFunction", {
         functionName: `${stack.stackName}-taskEmptyFunction`,
         handler: "packages/functions/src/tasks/empty.handler",
         permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances', 'ecs:stopTask', 'batch:terminateJob'],
@@ -276,7 +289,7 @@ export function Stack({stack}: StackContext) {
         }
     });
 
-    const regionsFunction = new Function(stack, "regionsFunction", {
+    new Function(stack, "regionsFunction", {
         functionName: `${stack.stackName}-regionsFunction`,
         handler: "packages/functions/src/tasks/regions.handler",
         permissions: ['ec2:describeRegions', 'cloudformation:DescribeStacks'],
@@ -363,13 +376,6 @@ export function Stack({stack}: StackContext) {
 
     const api = new Api(stack, "api", {
         routes: {
-            "GET /regions": regionsFunction,
-            "GET /tasks": taskListFunction,
-            "POST /tasks": taskCreateFunction,
-            "GET /tasks/{id}": taskGetFunction,
-            "PUT /tasks/{id}/abort": taskAbortFunction,
-            "DELETE /tasks/all": taskEmptyFunction,
-            "DELETE /tasks/{id}": taskDeleteFunction,
             "GET /api": apiFunction,
         },
     });
@@ -385,7 +391,6 @@ export function Stack({stack}: StackContext) {
         apiFunction: lambdaUrl(apiFunction.functionName, stack.region),
         RequestStateMachine: sfUrl(requestStateMachine.stateMachineArn, stack.region),
         SfRequestFunction: lambdaUrl(sfRequestFunction.functionName, stack.region),
-        taskDeleteFunction: lambdaUrl(taskDeleteFunction.functionName, stack.region),
         taskFunction: lambdaUrl(taskFunction.functionName, stack.region),
     });
 

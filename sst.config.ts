@@ -15,9 +15,6 @@ export default {
             architecture: "arm_64",
             runtime: "nodejs18.x",
             timeout: 90,
-            environment: {
-                SOURCE_IP: process.env.SOURCE_IP || ""
-            }
         });
         app.stack(Stack);
     }

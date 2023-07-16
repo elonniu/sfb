@@ -1,5 +1,5 @@
 import {ApiHandler} from "sst/node/api";
-import {jsonResponse} from "sst-helper";
+import {jsonResponse, sortKeys} from "sst-helper";
 import {Table} from "sst/node/table";
 import {batchDelete} from "../lib/ddb";
 import {batchStopExecutions} from "../lib/sf";
@@ -9,13 +9,11 @@ import {getTaskGlobal} from "../common";
 import {batchTerminateJobs} from "../lib/batch";
 
 const TableName = Table.tasks.tableName;
-const current_region = process.env.AWS_REGION || "";
+const region = process.env.AWS_REGION || "";
 
-export const handler = ApiHandler(async (_evt) => {
+export async function handler(event: any) {
 
-    const region = _evt.queryStringParameters?.region || current_region;
-
-    const taskId = _evt.pathParameters?.id || "";
+    const {taskId} = event;
 
     try {
         const globalTasks = await getTaskGlobal(taskId, region);
@@ -28,13 +26,13 @@ export const handler = ApiHandler(async (_evt) => {
             await batchDelete(TableName, {taskId}, globalTasks[0]?.regions);
         }
 
-        return jsonResponse({
+        return sortKeys({
             message: "task deleted",
         });
     } catch (e: any) {
-        return jsonResponse({
+        return sortKeys({
             error: e.message
         });
     }
 
-});
+}

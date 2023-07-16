@@ -1,5 +1,4 @@
-import {ApiHandler} from "sst/node/api";
-import {jsonResponse} from "sst-helper";
+import {sortKeys} from "sst-helper";
 import {Table} from "sst/node/table";
 import {batchDelete, dynamoDb} from "../lib/ddb";
 import {batchStopExecutions} from "../lib/sf";
@@ -9,11 +8,9 @@ import {getTaskGlobal} from "../common";
 import {batchTerminateJobs} from "../lib/batch";
 
 const TableName = Table.tasks.tableName;
-const current_region = process.env.AWS_REGION || "";
+const region = process.env.AWS_REGION || "";
 
-export const handler = ApiHandler(async (_evt) => {
-
-    const region = _evt.queryStringParameters?.region || current_region;
+export async function handler(event: any) {
 
     try {
 
@@ -38,13 +35,13 @@ export const handler = ApiHandler(async (_evt) => {
             }
         }
 
-        return jsonResponse({
+        return sortKeys({
             message: "task empty success",
         });
     } catch (e: any) {
-        return jsonResponse({
+        return sortKeys({
             error: e.message
         });
     }
 
-});
+}

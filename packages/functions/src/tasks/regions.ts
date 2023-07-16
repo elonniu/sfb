@@ -1,14 +1,13 @@
-import {ApiHandler} from "sst/node/api";
-import {jsonResponse} from "sst-helper";
 import {checkStackDeployment} from "../lib/cf";
+import {sortKeys} from "sst-helper";
 
 const aws_region = process.env.AWS_REGION || "";
 
-export const handler = ApiHandler(async (_evt) => {
+export async function handler() {
 
-    return jsonResponse({
+    return sortKeys({
         currentRegion: aws_region,
         deployedRegions: await checkStackDeployment(),
     });
 
-});
+}
