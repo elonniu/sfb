@@ -1,3 +1,3 @@
 #!/bin/bash
 
-aws lambda invoke --payload $(cat taskId.json | base64) --function-name dev-serverless-bench-Stack-taskGetFunction --query 'Payload' /dev/stdout | jq
+aws lambda invoke --payload $(cat result.json | base64) --function-name dev-serverless-bench-Stack-taskGetFunction /dev/stdout | jq

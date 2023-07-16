@@ -1,5 +1,4 @@
-import {ApiHandler} from "sst/node/api";
-import {jsonResponse, sortKeys} from "sst-helper";
+import {sortKeys} from "sst-helper";
 import {Table} from "sst/node/table";
 import {batchDelete} from "../lib/ddb";
 import {batchStopExecutions} from "../lib/sf";
@@ -27,7 +26,7 @@ export async function handler(event: any) {
         }
 
         return sortKeys({
-            message: "task deleted",
+            message: "Task deleted",
         });
     } catch (e: any) {
         return sortKeys({

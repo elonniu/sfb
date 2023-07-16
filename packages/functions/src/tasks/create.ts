@@ -11,10 +11,10 @@ const {
     TASK_GENERATE_FUNCTION
 } = process.env;
 
-export async function handler(task: Task) {
+export async function handler(event: Task) {
 
     try {
-        task = await checkTasks(task);
+        const task = await checkTask(event);
         await dispatchTask(task);
         return sortKeys(task);
     } catch (e: any) {
@@ -23,7 +23,7 @@ export async function handler(task: Task) {
 
 }
 
-async function checkTasks(task: Task) {
+async function checkTask(task: Task) {
 
     if (task.report) {
         task.report = true;
@@ -180,7 +180,45 @@ async function checkTasks(task: Task) {
     task.taskId = nanoid();
     task.createdAt = new Date().toISOString();
 
-    return task;
+    const {
+        c,
+        compute,
+        createdAt,
+        endTime,
+        method,
+        n,
+        nPerClient,
+        region,
+        regions,
+        report,
+        startTime,
+        successCode,
+        taskId,
+        taskName,
+        taskType,
+        timeoutMs,
+        url
+    } = task;
+
+    return {
+        c,
+        compute,
+        createdAt,
+        endTime,
+        method,
+        n,
+        nPerClient,
+        region,
+        regions,
+        report,
+        startTime,
+        successCode,
+        taskId,
+        taskName,
+        taskType,
+        timeoutMs,
+        url
+    } as Task;
 }
 
 async function dispatchTask(task: Task) {

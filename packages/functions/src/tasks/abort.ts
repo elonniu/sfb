@@ -22,7 +22,7 @@ export async function handler(event: any) {
         }
 
         return sortKeys({
-            message: "task aborted",
+            message: "Task aborted",
         });
     } catch (e: any) {
         return sortKeys({

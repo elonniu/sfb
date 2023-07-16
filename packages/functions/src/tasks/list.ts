@@ -39,7 +39,7 @@ export async function handler(task: Task) {
         console.error(e);
         return sortKeys({
             msg: e.message
-        }, 500);
+        });
     }
 
 }

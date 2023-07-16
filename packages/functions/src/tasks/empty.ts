@@ -36,7 +36,7 @@ export async function handler(event: any) {
         }
 
         return sortKeys({
-            message: "task empty success",
+            message: "Task empty success",
         });
     } catch (e: any) {
         return sortKeys({

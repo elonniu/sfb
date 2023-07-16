@@ -19,3 +19,4 @@ cdk.context.json
 /resources/job/target/
 .sst.config.*.mjs
 .env
+/cli/result.json

@@ -2,7 +2,7 @@
   "taskName": "test",
   "taskType": "API",
   "report": true,
-  "url": "https://www.baidu.com/api",
+  "url": "https://www.api.com",
   "method": "GET",
   "n": 1,
   "c": 1,
@@ -13,5 +13,5 @@
     "ap-southeast-1"
   ],
   "successCode": 200,
-  "compute": "Lambda"
+  "compute": "Batch"
 }

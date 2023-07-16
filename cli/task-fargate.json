@@ -1,0 +1,17 @@
+{
+  "taskName": "test",
+  "taskType": "API",
+  "report": true,
+  "url": "https://www.api.com",
+  "method": "GET",
+  "n": 1,
+  "c": 1,
+  "timeoutMs": 10000,
+  "_startTime": "2023-07-01T18:25:37.000+08:00",
+  "_endTime": "2023-07-01T18:40:37.000+08:00",
+  "regions": [
+    "ap-southeast-1"
+  ],
+  "successCode": 200,
+  "compute": "Fargate"
+}
