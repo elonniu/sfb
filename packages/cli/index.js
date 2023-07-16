@@ -15,8 +15,8 @@ program
     .version('0.0.1');
 
 program
-    .command('version')
-    .description('Show current CLi Version and check for updates')
+    .command('update')
+    .description('Show current Version and check for updates')
     .action(async (taskId) => {
         await update();
     });
@@ -106,10 +106,10 @@ program
 
 program
     .command('regions')
-    .description('List all deployed regions')
+    .description('List deployed regions')
     .action(async () => {
         const res = await invoke('dev-serverless-bench-Stack-regionsFunction');
-        table([res], ["currentRegion", "deployedRegions"]);
+        table(res, ["region", "current"]);
     });
 
 program

@@ -1,15 +1,23 @@
 import {checkStackDeployment} from "../lib/cf";
 import {bad, ok} from "../common";
 
-const region = process.env.AWS_REGION || "";
+const current_region = process.env.AWS_REGION || "";
 
 export async function handler() {
 
     try {
-        return ok({
-            currentRegion: region,
-            deployedRegions: await checkStackDeployment(),
-        });
+        const list = await checkStackDeployment();
+        let regions = [];
+
+        for (const region of list) {
+            regions.push({
+                region: region,
+                current: region === current_region,
+            });
+        }
+
+        return ok(regions);
+
     } catch (e: any) {
         return bad(e);
     }
