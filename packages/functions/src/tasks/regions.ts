@@ -8,7 +8,7 @@ export const handler = ApiHandler(async (_evt) => {
 
     return jsonResponse({
         currentRegion: aws_region,
-        supportedRegions: await checkStackDeployment(),
+        deployedRegions: await checkStackDeployment(),
     });
 
 });

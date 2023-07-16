@@ -194,7 +194,11 @@ async function checkTasks(task: Task) {
         // list task.regions are not in deployRegions
         const notDeployRegions = task.regions.filter((region) => !deployRegions.includes(region));
         if (notDeployRegions.length > 0) {
-            throw new Error(`ServerlessBench not in [${notDeployRegions.join(', ')}] yet, available regions [${deployRegions.join(', ')}]`);
+            if (deployRegions.length > 0) {
+                throw new Error(`ServerlessBench not in [${notDeployRegions.join(', ')}] yet, available regions [${deployRegions.join(', ')}]`);
+            } else {
+                throw new Error(`ServerlessBench not in [${notDeployRegions.join(', ')}] yet`);
+            }
         }
     }
 
