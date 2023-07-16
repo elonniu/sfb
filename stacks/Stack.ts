@@ -275,13 +275,6 @@ export function Stack({stack}: StackContext) {
         }
     });
 
-    new Function(stack, "regionsFunction", {
-        functionName: `${stack.stackName}-regionsFunction`,
-        handler: "packages/functions/src/tasks/regions.handler",
-        permissions: ['ec2:describeRegions', 'cloudformation:DescribeStacks'],
-        memorySize: 2048,
-    });
-
     const sfStateChangeLambda = new Function(stack, "sfStateChange", {
         functionName: `${stack.stackName}-sfStateChange`,
         handler: "packages/functions/src/eda/sfStateChange.handler",
