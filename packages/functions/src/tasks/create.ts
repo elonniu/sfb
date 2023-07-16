@@ -2,7 +2,7 @@ import {nanoid} from "sst-helper";
 import AWS from "aws-sdk";
 import {bad, ok, Task} from "../common";
 import {HttpStatusCode} from "axios";
-import {checkStackDeployment} from "../lib/cf";
+import {checkStackDeployment, SST_APP} from "../lib/cf";
 import process from "process";
 
 const current_region = process.env.AWS_REGION || "";
@@ -196,9 +196,9 @@ async function checkTask(task: Task) {
         const notDeployRegions = task.regions.filter((region) => !deployRegions.includes(region));
         if (notDeployRegions.length > 0) {
             if (deployRegions.length > 0) {
-                throw new Error(`ServerlessBench not in [${notDeployRegions.join(', ')}] yet, available regions [${deployRegions.join(', ')}]`);
+                throw new Error(`${SST_APP} not in [${notDeployRegions.join(', ')}] yet, available regions [${deployRegions.join(', ')}]`);
             } else {
-                throw new Error(`ServerlessBench not in [${notDeployRegions.join(', ')}] yet`);
+                throw new Error(`${SST_APP} not in [${notDeployRegions.join(', ')}] yet`);
             }
         }
     }

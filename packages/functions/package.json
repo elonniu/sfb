@@ -9,14 +9,12 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.119",
     "@types/node": "^20.3.2",
-    "@types/uuid": "^9.0.2",
     "sst": "2.21.8",
     "vitest": "^0.32.2"
   },
   "dependencies": {
     "aws-sdk": "^2.1408.0",
     "axios": "^1.4.0",
-    "nanoid": "^4.0.2",
-    "uuid": "^9.0.0"
+    "nanoid": "^4.0.2"
   }
 }

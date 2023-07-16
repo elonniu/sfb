@@ -19,10 +19,6 @@ program
     .option('--region <string>', 'AWS region')
     .option('--profile <string>', 'AWS profile');
 
-function getRoot() {
-    return execSync('npm root -g').toString().trim() + '/ibench';
-}
-
 program
     .command('dev')
     .description('Run the dev script')
@@ -40,7 +36,8 @@ program
 program
     .command('deploy')
     .description('Deploy the app in a region')
-    .action(() => {
+    .action(async () => {
+        await update();
         const options = program.opts();
         const args = [];
         if (!options.region) {
@@ -59,6 +56,7 @@ program
     .command('remove')
     .description('Remove the app from a region')
     .action(async (task) => {
+        await update();
         const options = program.opts();
         const args = [];
         if (!options.region) {
@@ -256,6 +254,7 @@ async function update() {
         const serverVersion = response.data['dist-tags'].latest;
         if (serverVersion !== program.version()) {
             console.log(chalk.yellow(`A new version ${chalk.green(serverVersion)} is available. Please update by running the command: ${chalk.blue('npm install -g ibench')}`));
+            process.exit(1);
         } else {
             console.log('You are using the latest version of the CLI: ' + chalk.green(`${serverVersion}`));
         }
@@ -326,6 +325,10 @@ export function awsDomain(region) {
     }
 
     return `aws.amazon.com`;
+}
+
+function getRoot() {
+    return execSync('npm root -g').toString().trim() + '/ibench';
 }
 
 async function currentVersion() {
