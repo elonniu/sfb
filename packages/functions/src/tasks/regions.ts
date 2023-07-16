@@ -1,22 +1,17 @@
-import {checkStackDeployment} from "../lib/cf";
+import {getStackDeployments} from "../lib/cf";
 import {bad, ok} from "../common";
+import {stackUrl} from "sst-helper";
 
 const current_region = process.env.AWS_REGION || "";
 
 export async function handler() {
 
     try {
-        const list = await checkStackDeployment();
-        let regions = [];
-
-        for (const region of list) {
-            regions.push({
-                region: region,
-                current: region === current_region,
-            });
+        const list = await getStackDeployments();
+        for (const stack of list) {
+            stack.url = stackUrl(stack.StackId, current_region);
         }
-
-        return ok(regions);
+        return ok(list);
 
     } catch (e: any) {
         return bad(e);

@@ -12,7 +12,8 @@ import {InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
 const client = new LambdaClient();
 
 program
-    .version('0.0.1');
+    .version('0.0.1')
+    .option('--stage <string>', 'stage option');
 
 program
     .command('update')
@@ -24,9 +25,9 @@ program
 program
     .command('ls [taskId]')
     .description('List a task or all tasks')
-    .action(async (taskId) => {
+    .action(async (taskId, options) => {
         if (taskId) {
-            const res = await invoke('dev-serverless-bench-Stack-taskGetFunction', {taskId});
+            const res = await invoke('serverless-bench-Stack-taskGetFunction', {taskId});
             show([res]);
             const list = Object.entries(res.states).flatMap(([region, data]) =>
                 Object.entries(data).map(([arn, status]) => ({region, arn, status}))
@@ -36,62 +37,20 @@ program
             });
             table(list, ["status", "jobUrl"]);
         } else {
-            const res = await invoke('dev-serverless-bench-Stack-taskListFunction');
+            const res = await invoke('serverless-bench-Stack-taskListFunction');
             taskList(res.Items);
         }
     });
 
-function stateUrl(item, compute) {
-    switch (compute) {
-        case 'Lambda':
-            return executionUrl(item.arn, item.region);
-        case 'EC2':
-            return ec2Url(item.arn, item.region);
-        case 'Fargate':
-            return fargateUrl(item.arn, item.region);
-        case 'Batch':
-            return batchUrl(item.arn, item.region);
-        default:
-            return "";
-    }
-
-}
-
-function fargateUrl(arn, region) {
-    return `https://${region}.console.${awsDomain(region)}/ecs/v2/clusters/${arn.split('/')[1]}/tasks/${arn.split('/')[2]}/configuration?region=${region}&selectedContainer=TaskContainer`;
-}
-
-function batchUrl(arn, region) {
-    return `https://${region}.console.${awsDomain(region)}/batch/home?region=${region}#jobs/fargate/detail/${arn}`;
-}
-
-function executionUrl(arn, region) {
-    return `https://${region}.console.${awsDomain(region)}/states/home?region=${region}#/v2/executions/details/${arn}`;
-}
-
-function ec2Url(arn, region) {
-    return `https://${region}.console.${awsDomain(region)}/ec2/home?region=${region}#InstanceDetails:instanceId=${arn}`;
-}
-
-export function awsDomain(region) {
-
-    if (region && region.startsWith('cn')) {
-        return `amazonaws.cn`;
-    }
-
-    return `aws.amazon.com`;
-}
-
-
 program
     .command('rm [taskId]')
     .description('Delete a task or all tasks')
-    .action(async (taskId) => {
+    .action(async (taskId, options) => {
         if (taskId) {
-            const res = await invoke('dev-serverless-bench-Stack-taskDeleteFunction', {taskId});
+            const res = await invoke('serverless-bench-Stack-taskDeleteFunction', {taskId});
             taskList(res);
         } else {
-            const res = await invoke('dev-serverless-bench-Stack-taskEmptyFunction');
+            const res = await invoke('serverless-bench-Stack-taskEmptyFunction');
             taskList(res);
         }
     });
@@ -99,24 +58,24 @@ program
 program
     .command('abort <task-id>')
     .description('Abort a task')
-    .action(async (taskId) => {
-        const res = await invoke('dev-serverless-bench-Stack-taskAbortFunction', {taskId});
+    .action(async (taskId, options) => {
+        const res = await invoke('serverless-bench-Stack-taskAbortFunction', {taskId});
         taskList(res);
     });
 
 program
     .command('regions')
     .description('List deployed regions')
-    .action(async () => {
-        const res = await invoke('dev-serverless-bench-Stack-regionsFunction');
-        table(res, ["region", "current"]);
+    .action(async (options) => {
+        const res = await invoke('serverless-bench-Stack-regionsFunction');
+        table(res, ["region", "url"]);
     });
 
 program
     .command('create')
     .description('Create a task')
     .option('--type <string>', 'Task type')
-    .option('--name <string>', 'Task name (required)')
+    .requiredOption('--name <string>', 'Task name (required)')
     .option('--report <boolean>', 'Report')
     .option('--url <string>', 'URL')
     .option('--method <string>', 'Method, default GET')
@@ -132,15 +91,11 @@ program
     .option('--start-time <string>', 'Start time')
     .option('--end-time <string>', 'End time')
     .action(async (task) => {
-        if (!task.name) {
-            console.error('Error: the --name option is required');
-            process.exit(1);
-        }
         if (!task.qps && !task.n) {
             console.error('Error: the --qps or --n option is required');
             process.exit(1);
         }
-        const res = await invoke('dev-serverless-bench-Stack-CreateTask', task);
+        const res = await invoke('serverless-bench-Stack-CreateTask', task);
         taskList([res]);
     });
 
@@ -153,27 +108,34 @@ if (!process.argv.slice(2).length) {
 async function invoke(FunctionName, payload = undefined, tip = 'Completed!') {
 
     const spinner = ora('Waiting...').start();
+    const stage = program.opts().stage ? program.opts().stage : 'prod';
 
     const params = {
-        FunctionName,
+        FunctionName: stage + '-' + FunctionName,
         Payload: payload ? JSON.stringify(payload) : undefined,
         InvocationType: "RequestResponse",
     };
 
     const command = new InvokeCommand(params);
 
-    const response = await client.send(command);
+    try {
+        const response = await client.send(command);
 
-    const result = JSON.parse(new TextDecoder("utf-8").decode(response.Payload));
+        const result = JSON.parse(new TextDecoder("utf-8").decode(response.Payload));
 
-    if (result.success === false) {
-        spinner.fail(result.msg);
+        if (result.success === false) {
+            spinner.fail(result.msg);
+            process.exit(1);
+        }
+
+        spinner.succeed(tip);
+
+        return result.data;
+    } catch (e) {
+        spinner.fail(e.message);
         process.exit(1);
     }
 
-    spinner.succeed(tip);
-
-    return result.data;
 }
 
 function table(data, columnOrder = []) {
@@ -257,4 +219,44 @@ function show(data) {
     });
 
     console.log(table.toString());
+}
+
+function stateUrl(item, compute) {
+    switch (compute) {
+        case 'Lambda':
+            return executionUrl(item.arn, item.region);
+        case 'EC2':
+            return ec2Url(item.arn, item.region);
+        case 'Fargate':
+            return fargateUrl(item.arn, item.region);
+        case 'Batch':
+            return batchUrl(item.arn, item.region);
+        default:
+            return "";
+    }
+
+}
+
+function fargateUrl(arn, region) {
+    return `https://${region}.console.${awsDomain(region)}/ecs/v2/clusters/${arn.split('/')[1]}/tasks/${arn.split('/')[2]}/configuration?region=${region}&selectedContainer=TaskContainer`;
+}
+
+function batchUrl(arn, region) {
+    return `https://${region}.console.${awsDomain(region)}/batch/home?region=${region}#jobs/fargate/detail/${arn}`;
+}
+
+function executionUrl(arn, region) {
+    return `https://${region}.console.${awsDomain(region)}/states/home?region=${region}#/v2/executions/details/${arn}`;
+}
+
+function ec2Url(arn, region) {
+    return `https://${region}.console.${awsDomain(region)}/ec2/home?region=${region}#InstanceDetails:instanceId=${arn}`;
+}
+
+export function awsDomain(region) {
+    if (region && region.startsWith('cn')) {
+        return `amazonaws.cn`;
+    }
+
+    return `aws.amazon.com`;
 }
