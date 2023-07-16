@@ -59,7 +59,12 @@ export function delay(startSeconds: number) {
 }
 
 
-export async function getTaskGlobal(taskId: string, region: string) {
+export async function getTaskGlobal(taskId: string | undefined, region: string) {
+
+    if (!taskId) {
+        throw new Error(`taskId is required`);
+    }
+
     const TableName = Table.tasks.tableName;
 
     const dynamodb = new AWS.DynamoDB.DocumentClient({region});
