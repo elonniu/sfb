@@ -1,8 +1,7 @@
 import {ApiHandler} from "sst/node/api";
-import {jsonResponse} from "sst-helper";
+import {jsonResponse, nanoid} from "sst-helper";
 import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
-import {v4 as uuidv4} from "uuid";
 import {StatesList, Task} from "../common";
 import {HttpStatusCode} from "axios";
 import {Table} from "sst/node/table";
@@ -173,7 +172,7 @@ export const handler = ApiHandler(async (_evt) => {
         return jsonResponse({msg: "endTime must be less than startTime + 48 hours"}, 400);
     }
 
-    task.taskId = uuidv4().toString();
+    task.taskId = nanoid();
 
     if (!task.regions) {
         task.regions = [current_region];

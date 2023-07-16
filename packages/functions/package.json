@@ -16,6 +16,7 @@
   "dependencies": {
     "aws-sdk": "^2.1408.0",
     "axios": "^1.4.0",
+    "nanoid": "^4.0.2",
     "uuid": "^9.0.0"
   }
 }

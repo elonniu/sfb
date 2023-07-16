@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       sst-helper:
-        specifier: 0.0.60
-        version: 0.0.60
+        specifier: 0.0.61
+        version: 0.0.61
       ts-node:
         specifier: ^10.9.1
         version: 10.9.1(@types/node@20.3.2)(typescript@5.1.6)
@@ -39,6 +39,9 @@ importers:
       axios:
         specifier: ^1.4.0
         version: 1.4.0
+      nanoid:
+        specifier: ^4.0.2
+        version: 4.0.2
       uuid:
         specifier: ^9.0.0
         version: 9.0.0
@@ -4949,6 +4952,12 @@ packages:
     hasBin: true
     dev: true
 
+  /nanoid@4.0.2:
+    resolution: {integrity: sha512-7ZtY5KTCNheRGfEFxnedV5zFiORN1+Y1N6zvPTnHQd8ENUvfaDBeuJDZb2bN/oXwXxu3qkTXDzy57W5vAmDTBw==}
+    engines: {node: ^14 || ^16 || >=18}
+    hasBin: true
+    dev: false
+
   /negotiator@0.6.3:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
@@ -5547,12 +5556,13 @@ packages:
       fsevents: 2.3.2
     dev: true
 
-  /sst-helper@0.0.60:
-    resolution: {integrity: sha512-1yBIfQy62DaobCYXhnN++ojfD2vZSI5z1g5YizO1ecZN4lroPLZszMsUt2pqnFgKEISDoKFPEr1Ei31WO2XN7A==}
+  /sst-helper@0.0.61:
+    resolution: {integrity: sha512-gwixYt8HqHNKbPXw/oRdvHvcmsZ8q4Bq71c4My+/1FXZ0bFxuXumSRyC4TLBm+1sqMxu+rEfE6DpNdUujh6lEg==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
     dependencies:
       '@slack/webhook': 6.1.0
       moment: 2.29.4
+      nanoid: 4.0.2
     transitivePeerDependencies:
       - debug
     dev: false
