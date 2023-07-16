@@ -201,9 +201,9 @@ export function Stack({stack}: StackContext) {
         bind: [taskTable],
     });
 
-    const taskCreateFunction = new Function(stack, "taskCreateFunction", {
-        functionName: `${stack.stackName}-taskCreateFunction`,
-        handler: "packages/functions/src/tasks/create.handler",
+    const taskGenerateFunction = new Function(stack, "taskGenerateFunction", {
+        functionName: `${stack.stackName}-taskGenerateFunction`,
+        handler: "packages/functions/src/tasks/generate.handler",
         permissions: [
             'ec2:describeRegions',
             'ec2:runInstances',
@@ -217,11 +217,11 @@ export function Stack({stack}: StackContext) {
         memorySize: 2048,
         bind: [taskTable],
         environment: {
+            VPC_SUBNETS: JSON.stringify(vpcSubnets),
+            SECURITY_GROUP_ID: securityGroup.securityGroupId,
             REQUEST_SF_ARN: requestStateMachine.stateMachineArn,
             INSTANCE_PROFILE_NAME: ec2InstanceProfile.instanceProfileName || "",
             BUCKET_NAME: bucket.bucketName,
-            VPC_SUBNETS: JSON.stringify(vpcSubnets),
-            SECURITY_GROUP_ID: securityGroup.securityGroupId,
             TASK_DEFINITION_FAMILY: ecsTaskDefinition.family,
             CLUSTER_NAME: ecsCluster.clusterName,
             CLUSTER_ARN: ecsCluster.clusterArn,
@@ -230,10 +230,23 @@ export function Stack({stack}: StackContext) {
             JOB_QUEUE: jobQueue.ref,
         },
     });
-    taskCreateFunction.addToRolePolicy(new PolicyStatement({
+    taskGenerateFunction.addToRolePolicy(new PolicyStatement({
         actions: ['batch:SubmitJob'],
         resources: ['*'],
     }) as any);
+
+    const taskCreateFunction = new Function(stack, "taskCreateFunction", {
+        functionName: `${stack.stackName}-taskCreateFunction`,
+        handler: "packages/functions/src/tasks/create.handler",
+        permissions: [
+            'cloudformation:DescribeStacks',
+            'lambda:InvokeFunction'
+        ],
+        memorySize: 2048,
+        environment: {
+            TASK_GENERATE_FUNCTION: taskGenerateFunction.functionName,
+        },
+    });
 
     const taskListFunction = new Function(stack, "taskListFunction", {
         functionName: `${stack.stackName}-taskListFunction`,

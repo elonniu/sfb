@@ -13,9 +13,16 @@ export const handler = ApiHandler(async (_evt) => {
     try {
         const globalTasks = await getTaskGlobal(taskId, region);
 
-        return jsonResponse({
-            task: globalTasks
-        });
+        let task = {...globalTasks[0]};
+
+        task.states = {};
+
+        for (let i = 0; i < globalTasks.length; i++) {
+            const globalTask = globalTasks[i];
+            task.states[globalTask.region] = globalTask.states;
+        }
+
+        return jsonResponse(task);
     } catch (e: any) {
         return jsonResponse({
             error: e.message

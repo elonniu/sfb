@@ -4,10 +4,6 @@ import {Table} from "sst/node/table";
 import AWS from "aws-sdk";
 import {batchGet, dynamoDb} from "./lib/ddb";
 
-export interface StatesList {
-    [key: string]: any;
-}
-
 export interface Execution {
     executionArn: Arn;
     startDate: string;
@@ -44,7 +40,7 @@ export interface Task {
     startTime: string;
     createdAt: string;
     endTime: string;
-    states?: Execution[];
+    states?: any;
 }
 
 export function delay(startSeconds: number) {
