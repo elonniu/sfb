@@ -33,6 +33,10 @@ async function checkTask(task: Task) {
         throw new Error("name is empty");
     }
 
+    if (task.name.length > 24) {
+        throw new Error("name is too long");
+    }
+
     if (!["EC2", "Lambda", "Fargate", "Batch"].includes(task.compute)) {
         throw new Error(`compute must be in ${["EC2", "Lambda", "Fargate", "Batch"].join(',')}`);
     }
@@ -202,6 +206,7 @@ async function checkTask(task: Task) {
 
     task.taskId = nanoid(15);
     task.createdAt = new Date().toISOString();
+    task.status = "Pending";
 
     const {
         c,
@@ -220,7 +225,8 @@ async function checkTask(task: Task) {
         name,
         type,
         timeout,
-        url
+        url,
+        status
     } = task;
 
     return {
@@ -240,7 +246,8 @@ async function checkTask(task: Task) {
         name,
         type,
         timeout,
-        url
+        url,
+        status
     } as Task;
 }
 

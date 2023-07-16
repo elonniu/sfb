@@ -8,6 +8,7 @@ import console from "console";
 export type TaskType = "API" | "HTML";
 export type Method = "GET" | "POST" | "PUT";
 export type Compute = "Lambda" | "EC2" | "Fargate" | "Batch";
+export type Status = "Pending" | "Running" | "Failed" | "Done";
 
 export interface Task {
     shouldEnd: boolean;
@@ -34,6 +35,7 @@ export interface Task {
     createdAt: string;
     endTime: string;
     states?: any;
+    status: Status;
 }
 
 export function delay(startSeconds: number) {
@@ -80,19 +82,41 @@ export async function getTaskGlobal(taskId: string | undefined, region: string) 
 }
 
 export async function updateTaskState(taskId: string, arn: string, status: string) {
+
+    const {Item} = await dynamoDb.get({
+        TableName: Table.tasks.tableName,
+        Key: {
+            taskId
+        }
+    } as any).promise();
+
+    if (!Item) {
+        throw new Error(`Task ${taskId} not found`);
+    }
+
+    if (!Item.states) {
+        return;
+    }
+
+    if (Item.states[arn] === undefined) {
+        return;
+    }
+
     const params = {
         TableName: Table.tasks.tableName,
         Key: {
             taskId
         },
         ExpressionAttributeNames: {
-            '#jsonField': 'states',
+            '#states': 'states',
+            '#status': 'status',
             '#instanceId': arn
         },
         ExpressionAttributeValues: {
-            ':newValue': status
+            ':stateValue': status,
+            ':newStatus': status
         },
-        UpdateExpression: 'SET #jsonField.#instanceId = :newValue',
+        UpdateExpression: 'SET #states.#instanceId = :stateValue, #status = :newStatus',
         ReturnValues: 'UPDATED_NEW'
     };
 

@@ -5,79 +5,11 @@ import ora from 'ora';
 import Table from 'cli-table3';
 import chalk from 'chalk';
 import axios from 'axios';
+import stripAnsi from 'strip-ansi';
 
 import {InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
 
 const client = new LambdaClient();
-
-function table(data, colWidths) {
-
-    const head = Object.keys(colWidths);
-
-    const table = new Table({
-        head,
-        colWidths: Object.values(colWidths),
-    });
-
-    data.forEach(item => {
-        const row = head.map(key => {
-            const value = item[key];
-            return typeof value === 'object' ? JSON.stringify(value) : value;
-        });
-        table.push(row);
-    });
-
-    console.log(table.toString());
-}
-
-function taskList(data) {
-    if (data.length === 0) {
-        return;
-    }
-
-    let list = [];
-    data.forEach(item => {
-        const row = {
-            taskId: item.taskId,
-            name: item.name,
-            url: item.url,
-            qpsOrN: (item.qps ? 'qps' : 'n' + ' ') + (item.qps ? item.qps : item.n),
-            c: item.c,
-            startTime: item.startTime,
-            endTime: item.endTime,
-            createdAt: item.createdAt,
-            status: item.status
-        };
-        list.push(row);
-    });
-
-    table(list, {
-        taskId: 17,
-        name: 10,
-        status: 8,
-        url: 24,
-        qpsOrN: 10,
-        c: 5,
-        startTime: 26,
-        endTime: 26,
-        createdAt: 26,
-    });
-}
-
-
-async function update() {
-    try {
-        const response = await axios.get('https://registry.npmjs.org/ibench');
-        const serverVersion = response.data['dist-tags'].latest;
-        if (serverVersion !== program.version()) {
-            console.log(chalk.yellow(`A new version of the tool is available. Please update to version ${serverVersion} by running the command: npm install -g ibench`));
-        } else {
-            console.log('You are using the latest version of the CLI: ' + chalk.green(`${serverVersion}`));
-        }
-    } catch (error) {
-        console.error(chalk.red('Failed to check for updates.'));
-    }
-}
 
 program
     .version('0.0.1');
@@ -114,30 +46,6 @@ program
             taskList(res);
         }
     });
-
-function show(data) {
-    const colWidths = [20, 40, 20, 40];
-
-    const table = new Table({
-        head: [chalk.yellow('Key1'), chalk.green('Value1'), chalk.yellow('Key2'), chalk.green('Value2')],
-        colWidths,
-    });
-
-    data.forEach(item => {
-        const entries = Object.entries(item);
-        for (let i = 0; i < entries.length; i += 2) {
-            const row = [
-                chalk.yellow(entries[i][0]),
-                chalk.green(typeof entries[i][1] === 'object' ? JSON.stringify(entries[i][1]) : entries[i][1]),
-                entries[i + 1] ? chalk.yellow(entries[i + 1][0]) : '',
-                entries[i + 1] && typeof entries[i + 1][1] === 'object' ? chalk.green(JSON.stringify(entries[i + 1][1])) : entries[i + 1] ? chalk.green(entries[i + 1][1]) : '',
-            ];
-            table.push(row);
-        }
-    });
-
-    console.log(table.toString());
-}
 
 program
     .command('abort <task-id>')
@@ -219,3 +127,92 @@ async function invoke(FunctionName, payload = undefined, tip = 'Completed!') {
     return result.data;
 }
 
+function table(data, colWidths) {
+
+    const head = Object.keys(colWidths).map(key => chalk.green(key));
+
+    const table = new Table({
+        head,
+        colWidths: Object.values(colWidths),
+    });
+
+    data.forEach(item => {
+        const row = head.map(key => {
+            const value = item[stripAnsi(key)];
+            return typeof value === 'object' ? JSON.stringify(value) : value;
+        });
+        table.push(row);
+    });
+
+    console.log(table.toString());
+}
+
+function taskList(data) {
+    if (data.length === 0) {
+        return;
+    }
+
+    let list = [];
+    data.forEach(item => {
+        const row = {
+            taskId: item.taskId,
+            name: item.name,
+            url: item.url,
+            qpsOrN: (item.qps ? 'qps' : 'n' + ' ') + (item.qps ? item.qps : item.n),
+            c: item.c,
+            startTime: item.startTime,
+            endTime: item.endTime,
+            status: item.status
+        };
+        list.push(row);
+    });
+
+    table(list, {
+        taskId: 17,
+        name: 10,
+        status: 12,
+        qpsOrN: 10,
+        c: 5,
+        startTime: 26,
+        endTime: 26,
+        url: 30,
+    });
+}
+
+async function update() {
+    try {
+        const response = await axios.get('https://registry.npmjs.org/ibench');
+        const serverVersion = response.data['dist-tags'].latest;
+        if (serverVersion !== program.version()) {
+            console.log(chalk.yellow(`A new version of the tool is available. Please update to version ${serverVersion} by running the command: npm install -g ibench`));
+        } else {
+            console.log('You are using the latest version of the CLI: ' + chalk.green(`${serverVersion}`));
+        }
+    } catch (error) {
+        console.error(chalk.red('Failed to check for updates.'));
+    }
+}
+
+function show(data) {
+    const colWidths = [20, 40, 20, 40];
+
+    const table = new Table({
+        head: [chalk.yellow('Key1'), chalk.green('Value1'), chalk.yellow('Key2'), chalk.green('Value2')],
+        colWidths,
+    });
+
+    data.forEach(item => {
+        const entries = Object.entries(item);
+        for (let i = 0; i < entries.length; i += 2) {
+            const row = [
+                chalk.yellow(entries[i][0]),
+                chalk.green(typeof entries[i][1] === 'object' ? JSON.stringify(entries[i][1]) : entries[i][1]),
+                entries[i + 1] ? chalk.yellow(entries[i + 1][0]) : '',
+                entries[i + 1] && typeof entries[i + 1][1] === 'object' ? chalk.green(JSON.stringify(entries[i + 1][1])) : entries[i + 1] ? chalk.green(entries[i + 1][1]) : '',
+            ];
+            table.push(row);
+        }
+    });
+
+    console.log(table.toString());
+}

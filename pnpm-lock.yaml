@@ -60,6 +60,9 @@ importers:
       shelljs:
         specifier: ^0.8.5
         version: 0.8.5
+      strip-ansi:
+        specifier: ^7.1.0
+        version: 7.1.0
 
   packages/functions:
     dependencies:
