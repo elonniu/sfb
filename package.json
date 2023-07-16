@@ -1,10 +1,10 @@
 {
   "name": "ibench",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "type": "module",
   "license": "Apache-2.0",
   "bin": {
-    "ibench": "./packages/cli/index.js",
+    "ibench": "./packages/index.js",
     "sst": "./node_modules/sst/cli/sst.js"
   },
   "scripts": {

@@ -9,6 +9,7 @@ import stripAnsi from 'strip-ansi';
 import {spawn} from 'child_process';
 import {InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
 import {batchJobUrl, currentVersion, ec2InstanceUrl, executionUrl, fargateTaskUrl, getRoot} from "sst-helper";
+import {getStackDeployments} from "../functions/src/lib/cf.js";
 
 const program = new Command();
 
@@ -125,6 +126,7 @@ program
     .description('List deployed regions')
     .action(async (options) => {
         const res = await invoke('serverless-bench-Stack-regionsFunction');
+        console.log(await getStackDeployments());
         table(res, ["region", "url"]);
     });
 
@@ -200,7 +202,7 @@ async function invoke(Name, payload = undefined, tip = 'Completed!') {
         return result.data;
     } catch (e) {
         if (e.message.indexOf('Function not found') !== -1) {
-            spinner.fail(`Your need deploy the serverless-bench first.`);
+            spinner.fail(`Your need deploy the serverless-bench first or use --region option.`);
         } else {
             spinner.fail(e.message);
         }
