@@ -38,7 +38,6 @@ export function Stack({stack}: StackContext) {
     });
 
     const ecsTaskExecutionRole = new Role(stack, "ecsTaskExecutionRole", {
-        roleName: `${stack.stackName}-ecsTaskExecutionRole`,
         assumedBy: new ServicePrincipal("ecs-tasks.amazonaws.com"),
         managedPolicies: [
             ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"),
@@ -61,7 +60,6 @@ export function Stack({stack}: StackContext) {
     });
 
     const batchRole = new Role(stack, 'batchRole', {
-        roleName: `${stack.stackName}-batchRole`,
         assumedBy: new ServicePrincipal('batch.amazonaws.com'),
     });
 
@@ -117,7 +115,6 @@ export function Stack({stack}: StackContext) {
     });
 
     const ec2Role = new Role(stack, "ec2Role", {
-        roleName: `${stack.stackName}-ec2Role`,
         assumedBy: new ServicePrincipal("ec2.amazonaws.com"),
         managedPolicies: [
             ManagedPolicy.fromAwsManagedPolicyName("AmazonS3FullAccess"),
@@ -127,10 +124,9 @@ export function Stack({stack}: StackContext) {
 
     const ec2InstanceProfile = new CfnInstanceProfile(stack, "ec2InstanceProfile", {
         roles: [ec2Role.roleName],
-        instanceProfileName: `${stack.stackName}-ec2InstanceProfile`
     });
 
-    const bucket = new Bucket(stack, "bucket", {});
+    const bucket = new Bucket(stack, "bucket");
 
     const taskTable = new Table(stack, "tasks", {
         fields: {
@@ -157,7 +153,7 @@ export function Stack({stack}: StackContext) {
         handler: "resources/golang/main.go",
         runtime: "go1.x",
         architecture: "x86_64",
-        bind: [bucket]
+        bind: [bucket],
     });
 
     const topic = new Topic(stack, "Topic", {
@@ -321,7 +317,7 @@ export function Stack({stack}: StackContext) {
             ecs: {
                 pattern: {
                     source: ["aws.ecs"],
-                    detailType: ["ECS Task State Change", "ECS Container Instance State Change", "ECS Deployment State Change"],
+                    detailType: ["ECS Task State Change"],
                     detail: {
                         clusterArn: [ecsCluster.clusterArn]
                     }
@@ -351,16 +347,14 @@ export function Stack({stack}: StackContext) {
         },
     });
 
-    taskFunction.bind([bucket, topic]);
-
     const api = new Api(stack, "api", {
         routes: {
             "GET /regions": regionsFunction,
             "GET /tasks": taskListFunction,
             "POST /tasks": taskCreateFunction,
             "GET /tasks/{id}": taskGetFunction,
-            "DELETE /tasks/{id}": taskDeleteFunction,
             "PUT /tasks/{id}/abort": taskAbortFunction,
+            "DELETE /tasks/{id}": taskDeleteFunction,
             "GET /api": apiFunction,
         },
     });
