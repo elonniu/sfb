@@ -6,10 +6,18 @@ export async function handler(event: any, context: any) {
 
     try {
         const list = await getStackDeployments();
+
+        const result = [];
         for (const stack of list) {
-            stack.url = stackUrl(stack.StackId, stack.region);
+            if (stack) {
+                result.push({
+                    ...stack,
+                    url: stackUrl(stack.StackId, stack.region),
+                } as any);
+            }
         }
-        return ok(list);
+
+        return ok(result);
 
     } catch (e: any) {
         return bad(e, context);

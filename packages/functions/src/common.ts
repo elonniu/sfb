@@ -126,6 +126,7 @@ export async function updateTaskState(taskId: string, arn: string, status: strin
 }
 
 export function ok(data: any) {
+    console.log(data);
     return sortKeys({success: true, data})
 }
 

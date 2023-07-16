@@ -1,4 +1,5 @@
 import {DynamoDB} from "aws-sdk";
+import console from "console";
 
 export const dynamoDb = new DynamoDB.DocumentClient();
 
@@ -32,14 +33,19 @@ async function batchGetRegions(TableName: string, Key: object, region: string) {
 }
 
 export async function batchGet(table: string, Key: object, regions: string[]) {
-    if (regions) {
-        let promises = [];
-        for (let i = 0; i < regions.length; i++) {
-            promises.push(batchGetRegions(table, Key, regions[i]));
+    try {
+        if (regions) {
+            let promises = [];
+            for (let i = 0; i < regions.length; i++) {
+                promises.push(batchGetRegions(table, Key, regions[i]));
+            }
+            const list = await Promise.all(promises);
+
+            return list.filter((item) => item !== null);
         }
-        const list = await Promise.all(promises);
-        // only return items that are not undefined
-        return list.filter((item) => item !== null);
+    } catch (error: any) {
+        console.log(error);
+        return [];
     }
 
     return [];

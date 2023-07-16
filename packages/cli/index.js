@@ -188,7 +188,7 @@ async function invoke(Name, payload = undefined, tip = 'Completed!') {
         if (result.success === false) {
             spinner.fail(chalk.red(result.msg + " in " + FunctionName));
             if (result.log) {
-                console.log(chalk.yellow("Log: " + result.log));
+                console.log(chalk.yellow(`Log: ${result.log}`));
             }
             process.exit(1);
         }
