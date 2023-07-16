@@ -14,7 +14,6 @@ export async function handler(task: Task) {
             TableName
         }).promise();
 
-        // desc by createdAt
         data.Items && data.Items.sort((a, b) => {
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });

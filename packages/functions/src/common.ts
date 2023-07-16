@@ -45,11 +45,6 @@ export function delay(startSeconds: number) {
     }
 
     const waitingMs = 1000 - new Date().getMilliseconds();
-    // console.log(JSON.stringify({
-    //     from: startSeconds,
-    //     to: startSeconds + 1,
-    //     waitingMs,
-    // }));
     return new Promise(resolve => setTimeout(resolve, waitingMs));
 }
 

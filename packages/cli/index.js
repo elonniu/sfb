@@ -6,9 +6,9 @@ import Table from 'cli-table3';
 import chalk from 'chalk';
 import axios from 'axios';
 import stripAnsi from 'strip-ansi';
-import {execSync, spawn} from 'child_process';
-import {promises as fs} from 'fs';
+import {spawn} from 'child_process';
 import {InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
+import {batchJobUrl, currentVersion, ec2InstanceUrl, executionUrl, fargateTaskUrl, getRoot} from "sst-helper";
 
 const client = new LambdaClient();
 const program = new Command();
@@ -292,47 +292,13 @@ function stateUrl(item, compute) {
         case 'Lambda':
             return executionUrl(item.arn, item.region);
         case 'EC2':
-            return ec2Url(item.arn, item.region);
+            return ec2InstanceUrl(item.arn, item.region);
         case 'Fargate':
-            return fargateUrl(item.arn, item.region);
+            return fargateTaskUrl(item.arn, item.region);
         case 'Batch':
-            return batchUrl(item.arn, item.region);
+            return batchJobUrl(item.arn, item.region);
         default:
             return "";
     }
 
-}
-
-function fargateUrl(arn, region) {
-    return `https://${region}.console.${awsDomain(region)}/ecs/v2/clusters/${arn.split('/')[1]}/tasks/${arn.split('/')[2]}/configuration?region=${region}&selectedContainer=TaskContainer`;
-}
-
-function batchUrl(arn, region) {
-    return `https://${region}.console.${awsDomain(region)}/batch/home?region=${region}#jobs/fargate/detail/${arn}`;
-}
-
-function executionUrl(arn, region) {
-    return `https://${region}.console.${awsDomain(region)}/states/home?region=${region}#/v2/executions/details/${arn}`;
-}
-
-function ec2Url(arn, region) {
-    return `https://${region}.console.${awsDomain(region)}/ec2/home?region=${region}#InstanceDetails:instanceId=${arn}`;
-}
-
-export function awsDomain(region) {
-    if (region && region.startsWith('cn')) {
-        return `amazonaws.cn`;
-    }
-
-    return `aws.amazon.com`;
-}
-
-function getRoot() {
-    return execSync('npm root -g').toString().trim() + '/ibench';
-}
-
-async function currentVersion() {
-    const packages = getRoot() + '/package.json';
-    const packageData = await fs.readFile(packages, 'utf-8');
-    return JSON.parse(packageData).version;
 }
