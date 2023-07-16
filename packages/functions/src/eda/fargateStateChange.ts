@@ -10,9 +10,7 @@ export async function handler(event: any) {
             for (const env of environment) {
                 if (env.name === "TASK") {
                     const task = JSON.parse(env.value) as Task;
-
                     await updateTaskState(task.taskId, taskArn, lastStatus);
-
                 }
             }
         }

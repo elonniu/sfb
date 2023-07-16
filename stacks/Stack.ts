@@ -265,6 +265,17 @@ export function Stack({stack}: StackContext) {
         }
     });
 
+    const taskEmptyFunction = new Function(stack, "taskEmptyFunction", {
+        functionName: `${stack.stackName}-taskEmptyFunction`,
+        handler: "packages/functions/src/tasks/empty.handler",
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances', 'ecs:stopTask', 'batch:terminateJob'],
+        memorySize: 2048,
+        bind: [taskTable],
+        environment: {
+            CLUSTER_ARN: ecsCluster.clusterArn,
+        }
+    });
+
     const regionsFunction = new Function(stack, "regionsFunction", {
         functionName: `${stack.stackName}-regionsFunction`,
         handler: "packages/functions/src/tasks/regions.handler",
@@ -357,6 +368,7 @@ export function Stack({stack}: StackContext) {
             "POST /tasks": taskCreateFunction,
             "GET /tasks/{id}": taskGetFunction,
             "PUT /tasks/{id}/abort": taskAbortFunction,
+            "DELETE /tasks/all": taskEmptyFunction,
             "DELETE /tasks/{id}": taskDeleteFunction,
             "GET /api": apiFunction,
         },
