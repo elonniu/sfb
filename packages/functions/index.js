@@ -137,9 +137,10 @@ program
     .action(async (options) => {
         await update();
         const stage = program.opts().stage ? program.opts().stage : 'prod';
-        const spinner = ora('Waiting...').start();
+        const spinner = ora('Fetching...').start();
         const stackName = stage + '-serverless-bench-Stack';
         const stacks = await stackExistsAndCompleteInAllRegions(stackName);
+        spinner.succeed("Only show completed stacks:");
         for (const stack of stacks) {
             stack.version = 'none';
             stack.needUpdate = true;
@@ -157,7 +158,6 @@ program
                 }
             }
         }
-        spinner.succeed("Query complete");
         table(stacks, ["region", "version", "url"]);
         for (const stack of stacks) {
             if (stack.needUpdate) {
