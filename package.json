@@ -1,6 +1,6 @@
 {
   "name": "ibench",
-  "version": "0.0.54",
+  "version": "0.0.57",
   "type": "module",
   "license": "Apache-2.0",
   "bin": {
@@ -11,8 +11,7 @@
     "dev": "sst dev",
     "build": "sst build",
     "remove": "sst remove",
-    "deploy": "sst deploy --stage prod",
-    "down": "sst remove --stage prod",
+    "deploy": "sst deploy",
     "console": "sst console",
     "typecheck": "tsc --noEmit",
     "release": "npm publish --registry=https://registry.npmjs.org"

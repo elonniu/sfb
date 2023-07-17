@@ -53,6 +53,7 @@ program
         }
         options.region && args.push(`--region=${options.region}`);
         options.profile && args.push(`--profile=${options.profile}`);
+        args.push(`--stage=prod`);
         const child = spawn('npm',
             ['run', 'deploy', '--', ...args],
             {stdio: 'inherit', cwd: getRoot()}
@@ -72,6 +73,7 @@ program
         }
         options.region && args.push(`--region=${options.region}`);
         options.profile && args.push(`--profile=${options.profile}`);
+        args.push(`--stage=prod`);
         const child = spawn('npm',
             ['run', 'remove', '--', ...args],
             {stdio: 'inherit', cwd: getRoot()}
@@ -159,8 +161,7 @@ program
                     + " -> "
                     + chalk.green(await currentVersion())
                     + " Command: "
-                    + chalk.yellow(`ibench deploy --region ${stack.region}`)
-                    + chalk.yellow(program.opts().stage ? ` --stage ${program.opts().stage}` : "")
+                    + chalk.yellow(`ibench deploy --region ${stack.region} ${stageParam()}`)
                 );
             }
         }
@@ -367,7 +368,10 @@ function showTask(res) {
     table(list, ["region", "status", "jobUrl"]);
     console.log(
         "Refresh Task Status: "
-        + chalk.yellow(`ibench ls ${res.taskId}`)
-        + chalk.yellow(program.opts().stage ? ` --stage ${program.opts().stage}` : "")
+        + chalk.yellow(`ibench ls ${res.taskId} ${stageParam()}`)
     );
+}
+
+function stageParam() {
+    return program.opts().stage ? `--stage ${program.opts().stage}` : ""
 }
