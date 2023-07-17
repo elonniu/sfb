@@ -42,31 +42,44 @@ ibench help
 ### 3.2 Create Task
 
 ```bash
+# create a new task in current region
 ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url https://api.com
+
+# create a new task in specific region(s)
 ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url https://api.com --regions ap-southeast-1,us-east-2
 ```
 
 ### 3.3 List Tasks
 
 ```bash
+# list all tasks
+ibench ls
+
+# list a specific task
 ibench ls [taskId]
 ```
 
 ### 3.4 Remove Tasks
 
 ```bash
+# remove all tasks
+ibench rm
+
+# remove a specific task
 ibench rm [taskId]
 ```
 
 ### 3.5 Abort Tasks
 
 ```bash
+# abort a specific task
 ibench abort <taskId>
 ```
 
 ### 3.6 List Deployed Regions
 
 ```bash
+# list all deployed regions
 ibench regions
 ```
 
