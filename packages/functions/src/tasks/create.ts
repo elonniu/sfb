@@ -38,6 +38,10 @@ async function checkTask(task: Task) {
         throw new Error("name is too long");
     }
 
+    if (!task.compute) {
+        task.compute = "Fargate";
+    }
+
     if (!["EC2", "Lambda", "Fargate", "Batch"].includes(task.compute)) {
         throw new Error(`compute must be in ${["EC2", "Lambda", "Fargate", "Batch"].join(',')}`);
     }

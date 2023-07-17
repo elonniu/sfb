@@ -186,7 +186,7 @@ program
     .option('--report <boolean>', 'Report')
     .option('--url <string>', 'URL')
     .option('--method <string>', 'Method, default GET')
-    .option('--compute <string>', 'Compute')
+    .option('--compute <string>', 'Compute Type, default Fargate, others: EC2, Lambda, Batch')
     .option('--key-name <string>', 'Key name')
     .option('--instance-type <string>', 'Instance type')
     .option('--qps <number>', 'QPS')

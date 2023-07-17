@@ -68,10 +68,10 @@ ibench regions
 ibench create --help
 
 # create a new task in current region
-ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url https://api.com
+ibench create --n 1 --name test --delay 10 --type API --url https://api.com
 
 # create a new task in specific region(s)
-ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url https://api.com --regions ap-southeast-1,us-east-2
+ibench create --n 1 --name test --delay 10 --type API --url https://api.com --regions ap-southeast-1,us-east-2
 
 ```
 
