@@ -3,8 +3,12 @@ import {RunInstancesRequest} from "aws-sdk/clients/ec2";
 import {Task} from "../common";
 
 async function batchStopEc2ByRegion(InstanceIds: string[], region: string) {
-    const ec2 = new AWS.EC2({apiVersion: '2016-11-15', region});
-    await ec2.terminateInstances({InstanceIds}).promise();
+    try {
+        const ec2 = new AWS.EC2({apiVersion: '2016-11-15', region});
+        await ec2.terminateInstances({InstanceIds}).promise();
+    } catch (e) {
+        console.log(e);
+    }
 }
 
 export async function batchStopEc2s(globalTasks: any[]) {

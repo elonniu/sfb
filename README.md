@@ -42,7 +42,8 @@ ibench help
 ### 3.2 Create Task
 
 ```bash
-ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url https://{your-url}
+ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url https://api.com
+ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url https://api.com --regions ap-southeast-1,us-east-2
 ```
 
 ### 3.3 List Tasks

@@ -1,4 +1,4 @@
-import {getStackDeploymentsRegionIds, nanoid} from "sst-helper";
+import {checkStackInRegions, nanoid} from "sst-helper";
 import AWS from "aws-sdk";
 import {bad, ok, SST_APP, SST_STAGE, Task} from "../common";
 import {HttpStatusCode} from "axios";
@@ -193,15 +193,7 @@ async function checkTask(task: Task) {
             throw new Error("regions must be less than 5");
         }
 
-        const deployRegions = await getStackDeploymentsRegionIds(StackName);
-        const notDeployRegions = task.regions.filter((region) => !deployRegions.includes(region));
-        if (notDeployRegions.length > 0) {
-            if (deployRegions.length > 0) {
-                throw new Error(`${SST_APP} not in [${notDeployRegions.join(', ')}] yet, available regions [${deployRegions.join(', ')}]`);
-            } else {
-                throw new Error(`${SST_APP} not in [${notDeployRegions.join(', ')}] yet`);
-            }
-        }
+        await checkStackInRegions(StackName, task.regions, SST_APP);
     }
 
     task.taskId = nanoid(15);

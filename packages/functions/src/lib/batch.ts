@@ -2,13 +2,17 @@ import AWS from "aws-sdk";
 import {TerminateJobRequest} from "aws-sdk/clients/batch";
 
 async function batchTerminateJobByRegion(jobId: string, region: string) {
-    const params: TerminateJobRequest = {
-        jobId,
-        reason: "Terminate by user",
-    };
+    try {
+        const params: TerminateJobRequest = {
+            jobId,
+            reason: "Terminate by user",
+        };
 
-    const client = new AWS.Batch({region});
-    await client.terminateJob(params).promise();
+        const client = new AWS.Batch({region});
+        await client.terminateJob(params).promise();
+    } catch (e) {
+        console.log(e);
+    }
 }
 
 export async function batchTerminateJobs(globalTasks: any[]) {

@@ -5,13 +5,17 @@ import {Task} from "../common";
 const CLUSTER_ARN = process.env.CLUSTER_ARN || "";
 
 async function batchStopTaskByRegion(task: string, region: string) {
-    const params: StopTaskRequest = {
-        task,
-        cluster: CLUSTER_ARN,
-    };
+    try {
+        const params: StopTaskRequest = {
+            task,
+            cluster: CLUSTER_ARN,
+        };
 
-    const client = new AWS.ECS({region});
-    await client.stopTask(params).promise();
+        const client = new AWS.ECS({region});
+        await client.stopTask(params).promise();
+    } catch (e) {
+        console.error("batchStopTaskByRegion error: ", e);
+    }
 }
 
 export async function batchStopTasks(globalTasks: any[]) {

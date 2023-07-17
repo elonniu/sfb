@@ -39,8 +39,8 @@ importers:
         specifier: 2.21.8
         version: 2.21.8
       sst-helper:
-        specifier: 0.0.80
-        version: 0.0.80(constructs@10.1.156)
+        specifier: 0.0.81
+        version: 0.0.81(constructs@10.1.156)
       strip-ansi:
         specifier: ^7.1.0
         version: 7.1.0
@@ -5216,8 +5216,8 @@ packages:
     optionalDependencies:
       fsevents: 2.3.2
 
-  /sst-helper@0.0.80(constructs@10.1.156):
-    resolution: {integrity: sha512-B+IFOmP2R3tl8xJLWCmTWjd/iW93q3qmj5CTrfsHne3NOGSakp3yI/QCNsi/+xDVt1qe63a/+gzlKzDbfmBXBg==}
+  /sst-helper@0.0.81(constructs@10.1.156):
+    resolution: {integrity: sha512-sgNxfnAqroXTF6Qd8++QgIul6DemitIHph4fBQupALp9MxPwb6q8tEEtHuUWxNoJOR+s+UqYAxq6DjWGf69s+A==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
     dependencies:
       '@aws-sdk/client-dynamodb': 3.370.0

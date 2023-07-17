@@ -2,8 +2,12 @@ import AWS from "aws-sdk";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 
 async function batchStopExecutionsByRegion(executionArn: string, region: string) {
-    const stepFunctions = new AWS.StepFunctions({region});
-    await stepFunctions.stopExecution({executionArn}).promise();
+    try {
+        const stepFunctions = new AWS.StepFunctions({region});
+        await stepFunctions.stopExecution({executionArn}).promise();
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 export async function batchStopExecutions(globalTasks: any[]) {

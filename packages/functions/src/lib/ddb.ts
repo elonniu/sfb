@@ -8,7 +8,7 @@ async function batchDeleteRegions(TableName: string, Key: object, region: string
         const ddb = await new DynamoDB.DocumentClient({region});
         await ddb.delete({TableName, Key}).promise()
     } catch (error: any) {
-
+        console.log(error);
     }
 }
 

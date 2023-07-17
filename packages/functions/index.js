@@ -200,14 +200,18 @@ async function invoke(Name, payload = undefined, tip = 'Completed!') {
         const result = JSON.parse(new TextDecoder("utf-8").decode(response.Payload));
 
         if (result.success === false) {
-            spinner.fail(chalk.red(result.msg + " in " + FunctionName));
+            spinner.fail(chalk.red(result.msg));
             if (result.log) {
                 console.log(chalk.yellow(`Log: ${result.log}`));
             }
             process.exit(1);
         }
 
-        spinner.succeed(tip);
+        if (result.data && result.data.Items && result.data.Items.length === 0) {
+            spinner.succeed("No data");
+        } else {
+            spinner.succeed(tip);
+        }
 
         return result.data;
     } catch (e) {
@@ -254,7 +258,7 @@ function taskList(data) {
         const row = {
             taskId: item.taskId,
             name: item.name,
-            compute: item.compute,
+            region: item.region,
             url: item.url,
             qpsOrN: (item.qps ? 'qps' : 'n' + ' ') + (item.qps ? item.qps : item.n),
             c: item.c,
@@ -265,7 +269,7 @@ function taskList(data) {
         list.push(row);
     });
 
-    table(list, ["taskId", "name", "compute", "status", "qpsOrN", "c", "startTime", "endTime", "url"]);
+    table(list, ["taskId", "name", "region", "status", "qpsOrN", "c", "startTime", "endTime", "url"]);
 }
 
 async function update() {
@@ -275,8 +279,6 @@ async function update() {
         if (serverVersion !== program.version()) {
             console.log(chalk.yellow(`Your version is ${chalk.red(program.version())}, A new version ${chalk.green(serverVersion)} is available. Please update by running the command: ${chalk.blue('npm install -g ibench')}`));
             process.exit(1);
-        } else {
-            console.log('You are using the latest version: ' + chalk.green(`${serverVersion}`));
         }
     } catch (error) {
         console.error(chalk.red('Failed to check for updates.'));
