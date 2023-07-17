@@ -37,16 +37,21 @@ ibench remove --region <your-region>
 
 ```bash
 ibench help
+
 ```
 
 ### 3.2 Create Task
 
 ```bash
+# show how create a new task
+ibench create --help
+
 # create a new task in current region
 ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url https://api.com
 
 # create a new task in specific region(s)
 ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url https://api.com --regions ap-southeast-1,us-east-2
+
 ```
 
 ### 3.3 List Tasks
@@ -57,6 +62,7 @@ ibench ls
 
 # show a specific task detail
 ibench ls [taskId]
+
 ```
 
 ### 3.4 Remove Tasks
@@ -67,6 +73,7 @@ ibench rm
 
 # remove a specific task
 ibench rm [taskId]
+
 ```
 
 ### 3.5 Abort Task
@@ -81,6 +88,7 @@ ibench abort <taskId>
 ```bash
 # list all deployed regions
 ibench regions
+
 ```
 
 ## 4. What are the benefits of using Serverless?
