@@ -7,6 +7,7 @@ import {CfnInstanceProfile, ManagedPolicy, PolicyStatement, Role, ServicePrincip
 import {SecurityGroup, SubnetType, Vpc} from "aws-cdk-lib/aws-ec2";
 import * as batch from "aws-cdk-lib/aws-batch";
 import {Cluster, Compatibility, ContainerImage, LogDrivers, NetworkMode, TaskDefinition} from "aws-cdk-lib/aws-ecs";
+import * as fs from "fs";
 
 const dockerImage = 'public.ecr.aws/elonniu/serverless-bench:latest';
 
@@ -352,6 +353,8 @@ export function Stack({stack}: StackContext) {
             },
         },
     });
+
+    stack.tags.setTag("version", JSON.parse(fs.readFileSync("./package.json", 'utf-8')).version);
 
     stack.addOutputs({
         stack: stackUrl(stack.stackId, stack.region),

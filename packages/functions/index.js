@@ -53,7 +53,6 @@ program
         }
         options.region && args.push(`--region=${options.region}`);
         options.profile && args.push(`--profile=${options.profile}`);
-        args.push(`--stage=prod`);
         const child = spawn('npm',
             ['run', 'deploy', '--', ...args],
             {stdio: 'inherit', cwd: getRoot()}
@@ -73,7 +72,6 @@ program
         }
         options.region && args.push(`--region=${options.region}`);
         options.profile && args.push(`--profile=${options.profile}`);
-        args.push(`--stage=prod`);
         const child = spawn('npm',
             ['run', 'remove', '--', ...args],
             {stdio: 'inherit', cwd: getRoot()}
@@ -135,9 +133,40 @@ program
         await update();
         const stage = program.opts().stage ? program.opts().stage : 'prod';
         const spinner = ora('Waiting...').start();
-        const res = await stackExistsAndCompleteInAllRegions(stage + '-serverless-bench-Stack');
+        const stackName = stage + '-serverless-bench-Stack';
+        const stacks = await stackExistsAndCompleteInAllRegions(stackName);
+        for (const stack of stacks) {
+            stack.version = 'none';
+            stack.needUpdate = true;
+            for (const tag of stack.Tags) {
+                if (tag.Key === 'version') {
+                    stack.version = tag.Value;
+                }
+            }
+            if (stack.version) {
+                if (stack.version === await currentVersion()) {
+                    stack.version = chalk.green(stack.version);
+                    stack.needUpdate = false;
+                } else {
+                    stack.version = chalk.red(stack.version);
+                }
+            }
+        }
         spinner.succeed("Query complete");
-        table(res, ["region", "url"]);
+        table(stacks, ["region", "version", "url"]);
+        for (const stack of stacks) {
+            if (stack.needUpdate) {
+                console.log(
+                    stack.region +
+                    " need update version "
+                    + chalk.red(stack.version)
+                    + " -> "
+                    + chalk.green(await currentVersion())
+                    + " Command: "
+                    + chalk.yellow(`ibench deploy --region ${stack.region}`)
+                );
+            }
+        }
     });
 
 program
