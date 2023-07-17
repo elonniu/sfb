@@ -92,6 +92,7 @@ program
         if (taskId) {
             const res = await invoke('serverless-bench-Stack-taskGetFunction', {taskId});
             show([res]);
+            console.log("Task Jobs:");
             const list = Object.entries(res.states).flatMap(([region, data]) =>
                 Object.entries(data).map(([arn, status]) => ({region, arn, status}))
             );
