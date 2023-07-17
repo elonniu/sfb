@@ -33,7 +33,7 @@ ibench remove --region <your-region>
 
 ## 3. Manage Tasks by CLi
 
-### 3.1 Help
+### 3.1 Show Help Options
 
 ```bash
 ibench help
@@ -55,7 +55,7 @@ ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url htt
 # list all tasks
 ibench ls
 
-# list a specific task
+# show a specific task detail
 ibench ls [taskId]
 ```
 
@@ -69,7 +69,7 @@ ibench rm
 ibench rm [taskId]
 ```
 
-### 3.5 Abort Tasks
+### 3.5 Abort Task
 
 ```bash
 # abort a specific task
