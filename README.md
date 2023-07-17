@@ -26,19 +26,27 @@ Before using CLI, you need to first deploy the base stack in your chosen region.
 
 > **Permissions**: Managing stacks usually requires administrator permissions.
 
-### 3.1 Deploy the stack
+### 3.1 Deploy
 
 ```bash
 ibench deploy --region <your-region>
 ```
 
-### 3.1 Remove the stack
+### 3.1 Remove
 
 ```bash
 ibench remove --region <your-region>
 ```
 
-## 4. Manage Tasks by CLi
+### 3.2 List Deployed Regions
+
+```bash
+# list all deployed regions
+ibench regions
+
+```
+
+## 4. Tasks
 
 > **Permissions**: Using the CLI usually requires ordinary permissions:
 > - lambda:invokeFunction
@@ -93,14 +101,6 @@ ibench rm [taskId]
 ```bash
 # abort a specific task
 ibench abort <taskId>
-```
-
-### 4.6 List Deployed Regions
-
-```bash
-# list all deployed regions
-ibench regions
-
 ```
 
 ## 5. What are the benefits of using Serverless?
