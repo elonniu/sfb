@@ -134,6 +134,10 @@ program
         const spinner = ora('Fetching...').start();
         const stackName = `serverless-bench-${stage}`;
         const stacks = await stackExistsAndCompleteInAllRegions(stackName);
+        if (stacks.length === 0) {
+            spinner.fail("No deployed regions");
+            process.exit(1);
+        }
         spinner.succeed("Only show completed stacks:");
         for (const stack of stacks) {
             stack.version = 'none';
@@ -244,7 +248,7 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
         return result.data;
     } catch (e) {
         if (e.message.indexOf('Function not found') !== -1) {
-            spinner.fail(`Your need deploy the serverless-bench first or use --region option.`);
+            spinner.fail(`Your need deploy the stack before use or add --region to specify the region.`);
         } else {
             spinner.fail(e.message);
         }
@@ -307,7 +311,7 @@ async function update() {
         const serverVersion = response.data['dist-tags'].latest;
         if (serverVersion !== program.version()) {
             spinner.stop();
-            console.log(chalk.yellow(`A new version ${chalk.green(serverVersion)} is available. Your version is ${chalk.red(program.version())}, Please update by running the command: ${chalk.blue('npm install -g ibench')}`));
+            console.log(chalk.yellow(`A new version ${chalk.green(serverVersion)} is available. Your version is ${chalk.red(program.version())}, Please update by the command: ${chalk.blue('npm install -g ibench')}`));
             process.exit(1);
         }
     } catch (error) {
