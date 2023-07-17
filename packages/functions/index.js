@@ -130,7 +130,7 @@ program
         await update();
         const stage = program.opts().stage ? program.opts().stage : 'prod';
         const spinner = ora('Fetching...').start();
-        const stackName = stage + '-serverless-bench';
+        const stackName = `serverless-bench-${stage}`;
         const stacks = await stackExistsAndCompleteInAllRegions(stackName);
         spinner.succeed("Only show completed stacks:");
         for (const stack of stacks) {
