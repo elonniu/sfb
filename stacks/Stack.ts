@@ -55,7 +55,7 @@ export function Stack({stack}: StackContext) {
         compatibility: Compatibility.FARGATE,
     });
 
-    const container = ecsTaskDefinition.addContainer('TaskContainer', {
+    const container = ecsTaskDefinition.addContainer('Task', {
         image: ContainerImage.fromRegistry(dockerImage),
         logging: LogDrivers.awsLogs({streamPrefix: 'TaskLogs'}),
     });
@@ -221,7 +221,7 @@ export function Stack({stack}: StackContext) {
         resources: ['*'],
     }) as any);
 
-    const taskCreateFunction = new Function(stack, "taskCreateFunction", {
+    new Function(stack, "taskCreateFunction", {
         functionName: `${stack.stackName}-CreateTask`,
         handler: "packages/functions/src/tasks/create.handler",
         permissions: [
