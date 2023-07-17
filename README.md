@@ -18,6 +18,14 @@ This is a tool for bench testing by AWS Serverless.
 
 ```bash
 npm i -g ibench
+
+```
+
+### 2.3 Show Help Options
+
+```bash
+ibench help
+
 ```
 
 ## 3. Stack
@@ -53,14 +61,7 @@ ibench regions
 > - ec2:describeRegions
 > - cloudformation:describeStacks
 
-### 4.1 Show Help Options
-
-```bash
-ibench help
-
-```
-
-### 4.2 Create Task
+### 4.1 Create Task
 
 ```bash
 # show how create a new task
@@ -74,7 +75,7 @@ ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url htt
 
 ```
 
-### 4.3 List Tasks
+### 4.2 List Tasks
 
 ```bash
 # list all tasks
@@ -85,7 +86,7 @@ ibench ls [taskId]
 
 ```
 
-### 4.4 Remove Tasks
+### 4.3 Remove Tasks
 
 ```bash
 # remove all tasks
@@ -96,7 +97,7 @@ ibench rm [taskId]
 
 ```
 
-### 4.5 Abort Task
+### 4.4 Abort Task
 
 ```bash
 # abort a specific task
