@@ -249,7 +249,7 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
     } catch (e) {
         if (e.message.indexOf('Function not found') !== -1) {
             spinner.fail(chalk.red('Current region not deployed stack yet.'));
-            spinner.fail(`Your can run ${chalk.yellow('ibench deploy')} to deploy the stack in current region before use.`);
+            spinner.fail(`Your can run ${chalk.yellow('ibench deploy --region <region>')} to deploy the stack in current region before use.`);
             spinner.fail('Or run ' + chalk.yellow('ibench regions') + ' to show all deployed regions and ' + `add ${chalk.yellow('--region <region>')} to specify the region for you command.`);
         } else {
             spinner.fail(e.message);
