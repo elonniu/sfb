@@ -85,15 +85,7 @@ program
         await update();
         if (taskId) {
             const res = await invoke('serverless-bench-Stack-taskGetFunction', {taskId});
-            show([res]);
-            console.log("Task Jobs:");
-            const list = Object.entries(res.states).flatMap(([region, data]) =>
-                Object.entries(data).map(([arn, status]) => ({region, arn, status}))
-            );
-            list.forEach(item => {
-                item.jobUrl = stateUrl(item, res.compute);
-            });
-            table(list, ["region", "status", "jobUrl"]);
+            showTask(res);
         } else {
             const res = await invoke('serverless-bench-Stack-taskListFunction');
             taskList(res.Items);
@@ -204,7 +196,7 @@ program
             task.regions = task.regions.split(',');
         }
         const res = await invoke('serverless-bench-Stack-CreateTask', task);
-        taskList([res]);
+        showTask(res);
     });
 
 program.parse(process.argv);
@@ -361,4 +353,21 @@ function stateUrl(item, compute) {
             return "";
     }
 
+}
+
+function showTask(res) {
+    show([res]);
+    console.log("Task Jobs:");
+    const list = Object.entries(res.states).flatMap(([region, data]) =>
+        Object.entries(data).map(([arn, status]) => ({region, arn, status}))
+    );
+    list.forEach(item => {
+        item.jobUrl = stateUrl(item, res.compute);
+    });
+    table(list, ["region", "status", "jobUrl"]);
+    console.log(
+        "Refresh Task Status: "
+        + chalk.yellow(`ibench ls ${res.taskId}`)
+        + chalk.yellow(program.opts().stage ? ` --stage ${program.opts().stage}` : "")
+    );
 }
