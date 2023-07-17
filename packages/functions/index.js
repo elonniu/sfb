@@ -314,7 +314,8 @@ async function update() {
         const response = await axios.get('https://registry.npmjs.org/ibench');
         const serverVersion = response.data['dist-tags'].latest;
         if (serverVersion !== program.version()) {
-            console.log(chalk.yellow(`Your version is ${chalk.red(program.version())}, A new version ${chalk.green(serverVersion)} is available. Please update by running the command: ${chalk.blue('npm install -g ibench')}`));
+            spinner.stop();
+            console.log(chalk.yellow(`A new version ${chalk.green(serverVersion)} is available. Your version is ${chalk.red(program.version())}, Please update by running the command: ${chalk.blue('npm install -g ibench')}`));
             process.exit(1);
         }
     } catch (error) {
