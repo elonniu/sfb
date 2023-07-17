@@ -24,7 +24,7 @@ npm i -g ibench
 
 Before using CLI, you need to first deploy the base stack in your chosen region.
 
-> Permission Require: Managing stacks usually requires administrator permissions.
+> **Permissions**: Managing stacks usually requires administrator permissions.
 
 ### 3.1 Deploy the stack
 
@@ -40,7 +40,7 @@ ibench remove --region <your-region>
 
 ## 4. Manage Tasks by CLi
 
-> Permissions: Using the CLI usually requires ordinary permissions:
+> **Permissions**: Using the CLI usually requires ordinary permissions:
 > - lambda:invokeFunction
 > - ec2:describeRegions
 > - cloudformation:describeStacks
