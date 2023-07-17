@@ -6,7 +6,7 @@ import process from "process";
 
 const current_region = process.env.AWS_REGION || "";
 
-export const StackName = `${SST_STAGE}-${SST_APP}-Stack`;
+export const StackName = `${SST_STAGE}-${SST_APP}`;
 
 const {
     TASK_GENERATE_FUNCTION

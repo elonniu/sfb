@@ -16,6 +16,8 @@ export default {
             runtime: "nodejs18.x",
             timeout: 90,
         });
-        app.stack(Stack);
+        app.stack(Stack, {
+            stackName: `${app.name}-${app.stage}`,
+        });
     }
 } satisfies SSTConfig;

@@ -84,10 +84,10 @@ program
     .action(async (taskId, options) => {
         await update();
         if (taskId) {
-            const res = await invoke('serverless-bench-Stack-taskGetFunction', {taskId});
+            const res = await invoke('taskGetFunction', {taskId});
             showTask(res);
         } else {
-            const res = await invoke('serverless-bench-Stack-taskListFunction');
+            const res = await invoke('taskListFunction');
             taskList(res.Items);
         }
     });
@@ -98,10 +98,10 @@ program
     .action(async (taskId, options) => {
         await update();
         if (taskId) {
-            const res = await invoke('serverless-bench-Stack-taskDeleteFunction', {taskId});
+            const res = await invoke('taskDeleteFunction', {taskId});
             taskList(res);
         } else {
-            const res = await invoke('serverless-bench-Stack-taskEmptyFunction');
+            const res = await invoke('taskEmptyFunction');
             taskList(res);
         }
     });
@@ -111,7 +111,7 @@ program
     .description('Abort a task')
     .action(async (taskId, options) => {
         await update();
-        const res = await invoke('serverless-bench-Stack-taskAbortFunction', {taskId});
+        const res = await invoke('taskAbortFunction', {taskId});
         taskList(res);
     });
 
@@ -130,7 +130,7 @@ program
         await update();
         const stage = program.opts().stage ? program.opts().stage : 'prod';
         const spinner = ora('Fetching...').start();
-        const stackName = stage + '-serverless-bench-Stack';
+        const stackName = stage + '-serverless-bench';
         const stacks = await stackExistsAndCompleteInAllRegions(stackName);
         spinner.succeed("Only show completed stacks:");
         for (const stack of stacks) {
@@ -195,7 +195,7 @@ program
         if (task.regions) {
             task.regions = task.regions.split(',');
         }
-        const res = await invoke('serverless-bench-Stack-CreateTask', task);
+        const res = await invoke('CreateTask', task);
         showTask(res);
     });
 
@@ -205,13 +205,13 @@ if (!process.argv.slice(2).length) {
     program.help();
 }
 
-async function invoke(Name, payload = undefined, tip = 'Completed!') {
+async function invoke(name, payload = undefined, tip = 'Completed!') {
 
     const client = new LambdaClient({region: program.opts().region});
 
     const spinner = ora('Fetching...').start();
     const stage = program.opts().stage ? program.opts().stage : 'prod';
-    const FunctionName = stage + '-' + Name;
+    const FunctionName = `serverless-bench-${name}-${stage}`;
 
     const params = {
         FunctionName,
