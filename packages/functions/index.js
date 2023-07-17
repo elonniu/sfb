@@ -79,16 +79,10 @@ program
     });
 
 program
-    .command('update')
-    .description('Show current Version and check for updates')
-    .action(async (taskId) => {
-        await update();
-    });
-
-program
     .command('ls [taskId]')
     .description('List a task or all tasks')
     .action(async (taskId, options) => {
+        await update();
         if (taskId) {
             const res = await invoke('serverless-bench-Stack-taskGetFunction', {taskId});
             show([res]);
@@ -110,6 +104,7 @@ program
     .command('rm [taskId]')
     .description('Delete a task or all tasks')
     .action(async (taskId, options) => {
+        await update();
         if (taskId) {
             const res = await invoke('serverless-bench-Stack-taskDeleteFunction', {taskId});
             taskList(res);
@@ -123,6 +118,7 @@ program
     .command('abort <task-id>')
     .description('Abort a task')
     .action(async (taskId, options) => {
+        await update();
         const res = await invoke('serverless-bench-Stack-taskAbortFunction', {taskId});
         taskList(res);
     });
@@ -200,6 +196,7 @@ program
     .option('--end-time <string>', 'End time')
     .option('--regions <string>', 'Target regions, example: us-east-1,us-west-2')
     .action(async (task) => {
+        await update();
         if (!task.qps && !task.n) {
             console.error('Error: the --qps or --n option is required');
             process.exit(1);
@@ -221,7 +218,7 @@ async function invoke(Name, payload = undefined, tip = 'Completed!') {
 
     const client = new LambdaClient({region: program.opts().region});
 
-    const spinner = ora('Waiting...').start();
+    const spinner = ora('Fetching...').start();
     const stage = program.opts().stage ? program.opts().stage : 'prod';
     const FunctionName = stage + '-' + Name;
 
@@ -312,6 +309,7 @@ function taskList(data) {
 }
 
 async function update() {
+    const spinner = ora('Waiting...').start();
     try {
         const response = await axios.get('https://registry.npmjs.org/ibench');
         const serverVersion = response.data['dist-tags'].latest;
@@ -322,6 +320,7 @@ async function update() {
     } catch (error) {
         console.error(chalk.red('Failed to check for updates.'));
     }
+    spinner.stop();
 }
 
 function show(data) {
