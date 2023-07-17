@@ -162,8 +162,7 @@ program
         for (const stack of stacks) {
             if (stack.needUpdate) {
                 console.log(
-                    stack.region +
-                    " need update version "
+                    "Need update version "
                     + chalk.red(stack.version)
                     + " -> "
                     + chalk.green(await currentVersion())
