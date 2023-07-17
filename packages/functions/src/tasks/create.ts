@@ -42,25 +42,23 @@ async function checkTask(task: Task) {
         task.compute = "Fargate";
     }
 
-    if (!["EC2", "Lambda", "Fargate", "Batch"].includes(task.compute)) {
-        throw new Error(`compute must be in ${["EC2", "Lambda", "Fargate", "Batch"].join(',')}`);
+    if (!["Lambda", "Fargate", "Batch"].includes(task.compute)) {
+        throw new Error(`compute must be in ${["Lambda", "Fargate", "Batch"].join(',')}`);
     }
 
     if (!["API", "HTML"].includes(task.type)) {
         throw new Error(`type must be in ${["API", "HTML"].join(',')}`);
     }
 
-    if (task.compute === "EC2") {
-
-        if (!task.keyName) {
-            throw new Error("KeyName must be set when compute is EC2");
-        }
-
-        if (!task.instanceType) {
-            task.instanceType = 't2.micro';
-        }
-
-    }
+    // if (task.compute === "EC2") {
+    //     if (!task.keyName) {
+    //         throw new Error("KeyName must be set when compute is EC2");
+    //     }
+    //
+    //     if (!task.instanceType) {
+    //         task.instanceType = 't2.micro';
+    //     }
+    // }
 
     if (!task.type) {
         throw new Error("type is empty");

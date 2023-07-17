@@ -11,7 +11,7 @@ export const SST_APP = process.env.SST_APP || "";
 
 export type TaskType = "API" | "HTML";
 export type Method = "GET" | "POST" | "PUT";
-export type Compute = "Lambda" | "EC2" | "Fargate" | "Batch";
+export type Compute = "Lambda" | "Fargate" | "Batch";
 export type Status = "Pending" | "Running" | "Failed" | "Done";
 
 export interface Task {
