@@ -56,7 +56,7 @@ export async function handler(event: any) {
             if (task.c == 1) {
                 let list = [];
                 for (let i = 0; i < task.n; i++) {
-                    list.push({...task, n: 1});
+                    list.push({...task, n: 1, nPerClient: 1});
                 }
                 await sendToSns(ExecutionId, list);
                 return {shouldEnd: true};
@@ -70,7 +70,7 @@ export async function handler(event: any) {
                             Records: [
                                 {
                                     SNS: {
-                                        Message: JSON.stringify({...task, c: 1, n: 1})
+                                        Message: JSON.stringify({...task, c: 1, n: 1, nPerClient: 1})
                                     }
                                 }
                             ]
@@ -92,7 +92,7 @@ export async function handler(event: any) {
         } else if (task.qps) {
             let list = [];
             for (let i = 0; i < task.qps; i++) {
-                list.push({...task});
+                list.push({...task, qps: undefined, c: 1, n: 1, nPerClient: 1});
             }
             await sendToSns(ExecutionId, list);
             await delay(startSeconds);

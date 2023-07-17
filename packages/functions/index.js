@@ -294,7 +294,7 @@ function taskList(data) {
             name: item.name,
             region: item.region,
             url: item.url,
-            qpsOrN: (item.qps ? 'qps' : 'n' + ' ') + (item.qps ? item.qps : item.n),
+            qpsOrN: (item.qps ? 'qps ' : 'n ') + (item.qps ? item.qps : item.n),
             c: item.c,
             startTime: item.startTime,
             endTime: item.endTime,

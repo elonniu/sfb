@@ -31,9 +31,7 @@ const {
 export async function handler(task: Task) {
     task.region = current_region;
 
-    if (task.compute === "EC2") {
-        task.states = await createEc2(task, current_region);
-    } else if (task.compute === "Fargate") {
+    if (task.compute === "Fargate") {
         task.states = await createEcsTasks(task, current_region);
     } else if (task.compute === "Batch") {
         task.states = await createJobs(task, current_region);

@@ -7,7 +7,6 @@ export async function handler(event: any) {
 
     const {detail} = event;
 
-    // get TagSpecifications from ec2 instance
     const {Tags} = await ec2.describeTags({
         Filters: [
             {

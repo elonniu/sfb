@@ -188,7 +188,7 @@ func FetchAndMeasureApi(task Task) {
 
 	duration := time.Since(start)
 
-	fmt.Printf("The network latency for the url %s is %s %d\n", task.URL, duration, resp.StatusCode)
+	fmt.Printf("%s %d\n %s", task.URL, resp.StatusCode, duration)
 }
 
 func FetchAndMeasureHtml(task Task) {

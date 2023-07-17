@@ -1,8 +1,8 @@
 import {checkStackInRegions, nanoid} from "sst-helper";
-import AWS from "aws-sdk";
 import {bad, ok, SST_APP, SST_STAGE, Task} from "../common";
 import {HttpStatusCode} from "axios";
 import process from "process";
+import {InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
 
 const current_region = process.env.AWS_REGION || "";
 
@@ -220,7 +220,8 @@ async function checkTask(task: Task) {
         type,
         timeout,
         url,
-        status
+        status,
+        qps,
     } = task;
 
     return {
@@ -241,25 +242,31 @@ async function checkTask(task: Task) {
         type,
         timeout,
         url,
-        status
+        status,
+        qps
     } as Task;
 }
 
 async function dispatchTask(task: Task) {
-
     task.states = {};
 
-    for (const region of task.regions) {
+    const promises = task.regions.map(async region => {
+        const client = new LambdaClient({region});
 
-        const lambda = new AWS.Lambda({region});
-
-        const res = await lambda.invoke({
+        const command = new InvokeCommand({
             FunctionName: TASK_GENERATE_FUNCTION || "",
-            Payload: JSON.stringify(task),
-            InvocationType: 'RequestResponse'
-        }).promise();
+            Payload: Buffer.from(JSON.stringify(task)),
+        });
 
-        task.states[region] = JSON.parse(res.Payload as string);
-    }
+        const response = await client.send(command);
 
+        let payload;
+        if (response.Payload) {
+            payload = JSON.parse(new TextDecoder("utf-8").decode(response.Payload));
+        }
+
+        task.states[region] = payload;
+    });
+
+    await Promise.all(promises);
 }

@@ -1,11 +1,8 @@
 import {Task, updateTaskState} from "../common";
-import console from "console";
 
 export async function handler(event: any) {
 
     const {detail: {taskArn, overrides, lastStatus}} = event;
-
-    console.log(event.detail);
 
     if (overrides.containerOverrides) {
         for (const containerOverride of overrides.containerOverrides) {
