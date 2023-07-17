@@ -12,6 +12,7 @@ This is a tool for bench testing by AWS Serverless.
 - `npm -v` >= 9.6.6
 - `docker -v` >= 24.0.2
 - `go version` >= go1.20.5
+- `Setting AWS Credentials` https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html
 
 ### 2.2 Install the CLI
 
