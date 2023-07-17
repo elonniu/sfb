@@ -216,7 +216,7 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
 
     const spinner = ora('Fetching...').start();
     const stage = program.opts().stage ? program.opts().stage : 'prod';
-    const FunctionName = `serverless-bench-${name}-${stage}`;
+    const FunctionName = `serverless-bench-${stage}-${name}`;
 
     const params = {
         FunctionName,
