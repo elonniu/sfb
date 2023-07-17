@@ -1,11 +1,12 @@
-import {nanoid} from "sst-helper";
+import {getStackDeploymentsRegionIds, nanoid} from "sst-helper";
 import AWS from "aws-sdk";
-import {bad, ok, Task} from "../common";
+import {bad, ok, SST_APP, SST_STAGE, Task} from "../common";
 import {HttpStatusCode} from "axios";
-import {checkStackDeployment, SST_APP} from "../lib/cf";
 import process from "process";
 
 const current_region = process.env.AWS_REGION || "";
+
+export const StackName = `${SST_STAGE}-${SST_APP}-Stack`;
 
 const {
     TASK_GENERATE_FUNCTION
@@ -192,7 +193,7 @@ async function checkTask(task: Task) {
             throw new Error("regions must be less than 5");
         }
 
-        const deployRegions = await checkStackDeployment();
+        const deployRegions = await getStackDeploymentsRegionIds(StackName);
         const notDeployRegions = task.regions.filter((region) => !deployRegions.includes(region));
         if (notDeployRegions.length > 0) {
             if (deployRegions.length > 0) {

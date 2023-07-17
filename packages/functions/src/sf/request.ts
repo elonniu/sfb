@@ -1,11 +1,11 @@
 import console from "console";
-import {delay, Task} from "../common";
+import {delay, SST_APP, SST_STAGE, Task} from "../common";
 import AWS from "aws-sdk";
 import {snsBatch} from "../lib/sns";
 import {Topic} from "sst/node/topic";
-import {CloudWatchNamespace} from "../lib/cf";
 import process from "process";
 
+export const CloudWatchNamespace = `${SST_STAGE}-${SST_APP}`;
 export const checkStepFunctionsStep = 5;
 
 const stepFunctions = new AWS.StepFunctions();

@@ -6,6 +6,9 @@ import {lambdaLogUrl, sortKeys} from "sst-helper";
 import console from "console";
 import process from "process";
 
+export const SST_STAGE = process.env.SST_STAGE || "";
+export const SST_APP = process.env.SST_APP || "";
+
 export type TaskType = "API" | "HTML";
 export type Method = "GET" | "POST" | "PUT";
 export type Compute = "Lambda" | "EC2" | "Fargate" | "Batch";

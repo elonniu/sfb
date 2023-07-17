@@ -1,10 +1,9 @@
-import {Task} from "../common";
+import {SST_APP, SST_STAGE, Task} from "../common";
 import process from "process";
 import AWS from "aws-sdk";
 import {Table} from "sst/node/table";
 import {dynamoDb} from "../lib/ddb";
 import {RunInstancesRequest} from "aws-sdk/clients/ec2";
-import {SST_APP, SST_STAGE} from "../lib/cf";
 import {runInstances} from "../lib/ec2";
 import {SubmitJobRequest} from "aws-sdk/clients/batch";
 import {RunTaskRequest} from "aws-sdk/clients/ecs";

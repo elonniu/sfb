@@ -7,8 +7,16 @@ import chalk from 'chalk';
 import axios from 'axios';
 import stripAnsi from 'strip-ansi';
 import {spawn} from 'child_process';
-import {GetFunctionCommand, InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
-import {batchJobUrl, currentVersion, ec2InstanceUrl, executionUrl, fargateTaskUrl, getRoot} from "sst-helper";
+import {InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
+import {
+    batchJobUrl,
+    currentVersion,
+    ec2InstanceUrl,
+    executionUrl,
+    fargateTaskUrl,
+    getRoot,
+    stackExistsAndCompleteInAllRegions
+} from "sst-helper";
 
 const program = new Command();
 
@@ -127,55 +135,10 @@ program
         await update();
         const stage = program.opts().stage ? program.opts().stage : 'prod';
         const spinner = ora('Waiting...').start();
-        const res = await lambdaExistsInAllRegions(stage + '-serverless-bench-Stack-taskAbortFunction');
+        const res = await stackExistsAndCompleteInAllRegions(stage + '-serverless-bench-Stack');
         spinner.succeed("Query complete");
-        table(res, ["region", "deployed"]);
+        table(res, ["region", "url"]);
     });
-
-const regions = [
-    "af-south-1",
-    "ap-east-1",
-    "ap-northeast-1",
-    "ap-northeast-2",
-    "ap-northeast-3",
-    "ap-south-1",
-    "ap-southeast-1",
-    "ap-southeast-2",
-    "ca-central-1",
-    "eu-central-1",
-    "eu-north-1",
-    "eu-south-1",
-    "eu-west-1",
-    "eu-west-2",
-    "eu-west-3",
-    "me-south-1",
-    "sa-east-1",
-    "us-east-1",
-    "us-east-2",
-    "us-west-1",
-    "us-west-2",
-];
-
-export async function lambdaExistsInAllRegions(functionName) {
-    const promises = regions.map(async region => {
-        const client = new LambdaClient({region});
-        try {
-            await client.send(new GetFunctionCommand({FunctionName: functionName}));
-            return {region, deployed: true};
-        } catch (err) {
-            if (err.code === "ResourceNotFoundException") {
-                return {region, deployed: false};
-            } else {
-                // throw err;
-                return {region, deployed: false};
-            }
-        }
-    });
-
-    const results = await Promise.all(promises);
-    // only deployed regions
-    return results.filter(item => item.deployed);
-}
 
 program
     .command('create')
