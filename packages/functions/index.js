@@ -26,19 +26,19 @@ program
     .option('--region <string>', 'AWS region')
     .option('--profile <string>', 'AWS profile');
 
-program
-    .command('dev')
-    .description('Run the dev script')
-    .action(() => {
-        const options = program.opts();
-        const args = [];
-        options.region && args.push(`--region=${options.region}`);
-        options.profile && args.push(`--profile=${options.profile}`);
-        const child = spawn('npm',
-            ['run', 'dev', '--', ...args],
-            {stdio: 'inherit', cwd: getRoot()}
-        );
-    });
+// program
+//     .command('dev')
+//     .description('Run the dev script')
+//     .action(() => {
+//         const options = program.opts();
+//         const args = [];
+//         options.region && args.push(`--region=${options.region}`);
+//         options.profile && args.push(`--profile=${options.profile}`);
+//         const child = spawn('npm',
+//             ['run', 'dev', '--', ...args],
+//             {stdio: 'inherit', cwd: getRoot()}
+//         );
+//     });
 
 program
     .command('deploy')
@@ -124,6 +124,14 @@ program
     .action(async (taskId, options) => {
         const res = await invoke('serverless-bench-Stack-taskAbortFunction', {taskId});
         taskList(res);
+    });
+
+program
+    .command('report <task-id>')
+    .description('Show a task report data')
+    .action(async (taskId, options) => {
+        await update();
+        console.log(chalk.blue("This feature is not implemented yet..."));
     });
 
 program
