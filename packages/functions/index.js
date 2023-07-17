@@ -164,6 +164,7 @@ program
                     + chalk.green(await currentVersion())
                     + " Command: "
                     + chalk.yellow(`ibench deploy --region ${stack.region}`)
+                    + chalk.yellow(program.opts().stage ? ` --stage ${program.opts().stage}` : "")
                 );
             }
         }
