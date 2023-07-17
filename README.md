@@ -12,7 +12,7 @@ This is a tool for bench testing by AWS Serverless.
 - `npm -v` >= 9.6.6
 - `docker -v` >= 24.0.2
 - `go version` >= go1.20.5
-- `Setting AWS Credentials` https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html
+- [Setting AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)
 
 ### 2.2 Install the CLI
 
@@ -20,28 +20,39 @@ This is a tool for bench testing by AWS Serverless.
 npm i -g ibench
 ```
 
-### 2.3 Deploy the stack
+## 3. Stack
+
+Before using CLI, you need to first deploy the base stack in your chosen region.
+
+> Permission Require: Managing stacks usually requires administrator permissions.
+
+### 3.1 Deploy the stack
 
 ```bash
 ibench deploy --region <your-region>
 ```
 
-### 2.4 Remove the stack
+### 3.1 Remove the stack
 
 ```bash
 ibench remove --region <your-region>
 ```
 
-## 3. Manage Tasks by CLi
+## 4. Manage Tasks by CLi
 
-### 3.1 Show Help Options
+> Permissions: Using the CLI usually requires ordinary permissions:
+> - lambda:invokeFunction
+> - ec2:describeRegions
+> - cloudformation:describeStacks
+
+### 4.1 Show Help Options
 
 ```bash
 ibench help
 
 ```
 
-### 3.2 Create Task
+### 4.2 Create Task
 
 ```bash
 # show how create a new task
@@ -55,7 +66,7 @@ ibench create --n 1 --name test --delay 10 --compute Lambda --type API --url htt
 
 ```
 
-### 3.3 List Tasks
+### 4.3 List Tasks
 
 ```bash
 # list all tasks
@@ -66,7 +77,7 @@ ibench ls [taskId]
 
 ```
 
-### 3.4 Remove Tasks
+### 4.4 Remove Tasks
 
 ```bash
 # remove all tasks
@@ -77,14 +88,14 @@ ibench rm [taskId]
 
 ```
 
-### 3.5 Abort Task
+### 4.5 Abort Task
 
 ```bash
 # abort a specific task
 ibench abort <taskId>
 ```
 
-### 3.6 List Deployed Regions
+### 4.6 List Deployed Regions
 
 ```bash
 # list all deployed regions
@@ -92,7 +103,7 @@ ibench regions
 
 ```
 
-## 4. What are the benefits of using Serverless?
+## 5. What are the benefits of using Serverless?
 
 - Pay as you go: only pay for the time your code is running
 - No server management: no need to worry about the infrastructure
@@ -109,13 +120,15 @@ ibench regions
 - Native support for versioning: version control
 - Native support for ESM settings: batch size, retry, etc.
 
-# 5. How to compute the cost?
+# 6. How to compute the cost?
 
 - https://aws.amazon.com/lambda/pricing/
 - https://aws.amazon.com/step-functions/pricing/
 - https://aws.amazon.com/sns/pricing/
+- https://aws.amazon.com/ecs/pricing/
+- https://aws.amazon.com/batch/pricing/
 
-# 6. How to get cost-effective / high performance?
+# 7. How to get cost-effective / high performance?
 
 - Optimize the bootstrap time for cold start
 - Use the right memory size
