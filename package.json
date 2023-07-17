@@ -1,6 +1,6 @@
 {
   "name": "ibench",
-  "version": "0.0.70",
+  "version": "0.0.71",
   "type": "module",
   "license": "Apache-2.0",
   "bin": {

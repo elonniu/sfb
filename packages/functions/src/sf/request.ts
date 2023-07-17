@@ -1,11 +1,11 @@
 import console from "console";
-import {delay, SST_APP, SST_STAGE, Task} from "../common";
+import {delay, Task} from "../common";
 import AWS from "aws-sdk";
 import {snsBatch} from "../lib/sns";
 import {Topic} from "sst/node/topic";
 import process from "process";
+import {StackName} from "../tasks/create";
 
-export const CloudWatchNamespace = `${SST_STAGE}-${SST_APP}`;
 export const checkStepFunctionsStep = 5;
 
 const stepFunctions = new AWS.StepFunctions();
@@ -140,7 +140,7 @@ export async function sendToSns(ExecutionId: string, tasks: Task[]) {
                 Value: tasks.length
             },
         ],
-        Namespace: CloudWatchNamespace
+        Namespace: StackName
     };
 
     cloudwatch.putMetricData(params, function (err, data) {

@@ -6,7 +6,7 @@ import process from "process";
 
 const current_region = process.env.AWS_REGION || "";
 
-export const StackName = `${SST_STAGE}-${SST_APP}`;
+export const StackName = `${SST_APP}-${SST_STAGE}`;
 
 const {
     TASK_GENERATE_FUNCTION
@@ -191,7 +191,7 @@ async function checkTask(task: Task) {
         task.regions = [current_region];
     } else {
 
-        if (task.regions.length > 5) {
+        if (task.regions.length > 10) {
             throw new Error("regions must be less than 5");
         }
 
