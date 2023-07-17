@@ -248,8 +248,8 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
         return result.data;
     } catch (e) {
         if (e.message.indexOf('Function not found') !== -1) {
-            spinner.fail(`Current region not deployed stack yet.`);
-            spinner.fail(`Your can run ${chalk.yellow('ibench deploy')} deploy the stack in current region before use.`);
+            spinner.fail(chalk.red('Current region not deployed stack yet.'));
+            spinner.fail(`Your can run ${chalk.yellow('ibench deploy')} to deploy the stack in current region before use.`);
             spinner.fail('Or run ' + chalk.yellow('ibench regions') + ' to show all deployed regions and ' + `add ${chalk.yellow('--region <region>')} to specify the region for you command.`);
         } else {
             spinner.fail(e.message);
@@ -313,7 +313,7 @@ async function update() {
         const serverVersion = response.data['dist-tags'].latest;
         if (serverVersion !== program.version()) {
             spinner.stop();
-            console.log(chalk.yellow(`A new version ${chalk.green(serverVersion)} is available. Your version is ${chalk.red(program.version())}, Please update by the command: ${chalk.blue('npm install -g ibench')}`));
+            console.log(chalk.yellow(`A new version ${chalk.green(serverVersion)} is available. Your version is ${chalk.red(program.version())}, Please update by run: ${chalk.blue('npm i -g ibench')}`));
             process.exit(1);
         }
     } catch (error) {
