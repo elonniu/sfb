@@ -1,5 +1,5 @@
 import {Bucket, EventBus, Function, StackContext, Table, Topic} from "sst/constructs";
-import {bucketUrl, ddbUrl, lambdaUrl, sfUrl, stackUrl, topicUrl} from "sst-helper";
+import {stackUrl} from "sst-helper";
 import {Choice, Condition, JsonPath, Pass, StateMachine, TaskInput} from 'aws-cdk-lib/aws-stepfunctions';
 import {LambdaInvoke} from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as events from "aws-cdk-lib/aws-events";
@@ -358,13 +358,6 @@ export function Stack({stack}: StackContext) {
 
     stack.addOutputs({
         stack: stackUrl(stack.stackId, stack.region),
-        taskTable: ddbUrl(taskTable.tableName, stack.region),
-        bucket: bucketUrl(bucket.bucketName, stack.region),
-        topic: topicUrl(topic.topicArn, stack.region),
-        taskCreateFunction: lambdaUrl(taskCreateFunction.functionName, stack.region),
-        RequestStateMachine: sfUrl(requestStateMachine.stateMachineArn, stack.region),
-        SfRequestFunction: lambdaUrl(sfRequestFunction.functionName, stack.region),
-        taskFunction: lambdaUrl(taskFunction.functionName, stack.region),
     });
 
 }
