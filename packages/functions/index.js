@@ -349,7 +349,7 @@ function showTask(res) {
     list.forEach(item => {
         item.jobUrl = stateUrl(item, res.compute);
     });
-    table(list, ["region", "status", "jobUrl"]);
+    table(list, ["status", "jobUrl"]);
     console.log(
         "Refresh Task Status: "
         + chalk.yellow(`ibench ls ${res.taskId} ${stageParam()}`)
