@@ -183,8 +183,6 @@ export function Stack({stack}: StackContext) {
         functionName: `${stack.stackName}-taskGenerateFunction`,
         handler: "packages/functions/src/tasks/generate.handler",
         permissions: [
-            'ec2:runInstances',
-            'ec2:CreateTags',
             'ecs:RunTask',
             'iam:PassRole',
             'states:StartExecution',
@@ -236,7 +234,7 @@ export function Stack({stack}: StackContext) {
     new Function(stack, "taskAbortFunction", {
         functionName: `${stack.stackName}-taskAbortFunction`,
         handler: "packages/functions/src/tasks/abort.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem', 'ec2:terminateInstances', 'ecs:stopTask', 'batch:terminateJob'],
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem', 'ecs:stopTask', 'batch:terminateJob'],
         memorySize: 2048,
         bind: [taskTable],
         environment: {
@@ -247,7 +245,7 @@ export function Stack({stack}: StackContext) {
     new Function(stack, "taskDeleteFunction", {
         functionName: `${stack.stackName}-taskDeleteFunction`,
         handler: "packages/functions/src/tasks/delete.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances', 'ecs:stopTask', 'batch:terminateJob'],
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ecs:stopTask', 'batch:terminateJob'],
         memorySize: 2048,
         bind: [taskTable],
         environment: {
@@ -258,7 +256,7 @@ export function Stack({stack}: StackContext) {
     new Function(stack, "taskEmptyFunction", {
         functionName: `${stack.stackName}-taskEmptyFunction`,
         handler: "packages/functions/src/tasks/empty.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ec2:terminateInstances', 'ecs:stopTask', 'batch:terminateJob'],
+        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ecs:stopTask', 'batch:terminateJob'],
         memorySize: 2048,
         bind: [taskTable],
         environment: {
@@ -282,13 +280,6 @@ export function Stack({stack}: StackContext) {
         functionName: `${stack.stackName}-batchJobStateChange`,
         handler: "packages/functions/src/eda/batchJobStateChange.handler",
         bind: [taskTable]
-    });
-
-    const ec2StateChangeLambda = new Function(stack, "ec2StateChange", {
-        functionName: `${stack.stackName}-ec2StateChange`,
-        handler: "packages/functions/src/eda/ec2StateChange.handler",
-        bind: [taskTable],
-        permissions: ["ec2:describeTags"]
     });
 
     new EventBus(stack, "Bus", {
@@ -330,15 +321,6 @@ export function Stack({stack}: StackContext) {
                 },
                 targets: {
                     myTarget1: batchJobStateChangeLambda,
-                },
-            },
-            ec2: {
-                pattern: {
-                    source: ["aws.ec2"],
-                    detailType: ["EC2 Instance State-change Notification"],
-                },
-                targets: {
-                    myTarget1: ec2StateChangeLambda,
                 },
             },
         },
