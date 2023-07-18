@@ -200,8 +200,8 @@ program
         if (task.regions) {
             task.regions = task.regions.split(',');
         }
-        const res = await invoke('CreateTask', task);
-        showTask(res);
+        const res = await invoke('CreateTask', task, 'Task created!');
+        console.log(chalk.green("You can get states by run: ") + chalk.yellow(`ibench ls ${res.taskId} ${stageParam()}`));
     });
 
 program.parse(process.argv);
