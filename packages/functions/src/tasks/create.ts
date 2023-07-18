@@ -28,6 +28,9 @@ export async function handler(event: Task, context: any) {
 async function checkTask(task: Task) {
 
     task.version = TASK_VERSION;
+    task.client = 1;
+    task.envInitDuration = -1;
+    task.latency = -1;
 
     if (task.report) {
         task.report = true;

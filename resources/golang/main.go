@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -16,30 +17,32 @@ import (
 )
 
 type Task struct {
-	ShouldEnd   bool          `json:"shouldEnd"`
-	Report      bool          `json:"report"`
-	Name        string        `json:"name"`
-	Version     string        `json:"version"`
-	TaskId      string        `json:"taskId"`
-	Type        string        `json:"type"` // Assuming TaskType is a string in TypeScript
-	Client      *int          `json:"client"`
-	URL         string        `json:"url"`
-	Method      string        `json:"method"`  // Assuming Method is a string in TypeScript
-	Compute     string        `json:"compute"` // Assuming Compute is a string in TypeScript
-	Qps         *int          `json:"qps"`
-	N           *int          `json:"n"`
-	C           int           `json:"c"`
-	Delay       *int          `json:"delay"`
-	Regions     []string      `json:"regions"`
-	Region      string        `json:"region"`
-	NPerClient  *int          `json:"nPerClient"`
-	Timeout     time.Duration `json:"timeout"`
-	SuccessCode int           `json:"successCode"` // Assuming HttpStatusCode is an int in TypeScript
-	StartTime   string        `json:"startTime"`
-	CreatedAt   string        `json:"createdAt"`
-	EndTime     string        `json:"endTime"`
-	States      interface{}   `json:"states"` // Assuming States is an arbitrary JSON structure
-	Status      string        `json:"status"` // Assuming Status is a string in TypeScript
+	ShouldEnd       bool          `json:"shouldEnd"`
+	Report          bool          `json:"report"`
+	Name            string        `json:"name"`
+	Version         string        `json:"version"`
+	TaskId          string        `json:"taskId"`
+	Type            string        `json:"type"`
+	Client          int           `json:"client"`
+	URL             string        `json:"url"`
+	Method          string        `json:"method"`
+	Compute         string        `json:"compute"`
+	Qps             *int          `json:"qps"`
+	N               *int          `json:"n"`
+	C               int           `json:"c"`
+	EnvInitDuration int64         `json:"envInitDuration"`
+	Latency         int64         `json:"latency"`
+	Delay           *int          `json:"delay"`
+	Regions         []string      `json:"regions"`
+	Region          string        `json:"region"`
+	NPerClient      *int          `json:"nPerClient"`
+	Timeout         time.Duration `json:"timeout"`
+	SuccessCode     int           `json:"successCode"`
+	StartTime       string        `json:"startTime"`
+	CreatedAt       string        `json:"createdAt"`
+	EndTime         string        `json:"endTime"`
+	States          interface{}   `json:"states"`
+	Status          string        `json:"status"`
 }
 
 func UnmarshalTask(data string) (Task, error) {
@@ -82,8 +85,8 @@ func ProcessTask(data string) {
 		fmt.Println("Error:", err)
 		return
 	}
-	duration := time.Since(creationTime)
-	fmt.Printf("Task was created %d seconds ago\n", int64(duration.Seconds()))
+	task.EnvInitDuration = time.Since(creationTime).Milliseconds()
+	fmt.Printf("Task Environment Init Duration %d ms\n", task.EnvInitDuration)
 
 	startTime, err := time.Parse(time.RFC3339, task.StartTime)
 	if err != nil {
@@ -93,6 +96,8 @@ func ProcessTask(data string) {
 	for time.Now().Before(startTime) {
 		time.Sleep(100 * time.Millisecond)
 	}
+	task.Latency = time.Since(startTime).Milliseconds()
+	fmt.Printf("Task Latency %d ms\n", task.Latency)
 
 	var endTime *time.Time
 	if task.EndTime != "" {
@@ -149,7 +154,7 @@ func FetchAndMeasure(task Task) {
 }
 
 func ua(task Task) string {
-	return "iBench " + task.Version + " " + task.Compute + " " + task.TaskId
+	return "iBench " + task.Version + " " + task.Compute + " TaskId: " + task.TaskId + " EnvInit Duration: " + strconv.FormatInt(task.EnvInitDuration, 10) + " ms" + " Task Latency: " + strconv.FormatInt(task.Latency, 10) + " ms"
 }
 
 func FetchAndMeasureApi(task Task) {

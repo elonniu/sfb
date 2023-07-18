@@ -21,13 +21,15 @@ export interface Task {
     name: string;
     taskId: string;
     type: TaskType;
-    client?: number;
     url: string;
     method: Method;
     compute: Compute;
     qps?: number;
     n?: number;
     c: number;
+    client: number;
+    envInitDuration?: number;
+    latency?: number;
     delay?: number;
     regions: string[];
     region: string;
