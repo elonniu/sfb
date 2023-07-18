@@ -5,6 +5,7 @@ import process from "process";
 import {InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
 
 const current_region = process.env.AWS_REGION || "";
+const TASK_VERSION = process.env.TASK_VERSION || "";
 
 export const StackName = `${SST_APP}-${SST_STAGE}`;
 
@@ -25,6 +26,8 @@ export async function handler(event: Task, context: any) {
 }
 
 async function checkTask(task: Task) {
+
+    task.version = TASK_VERSION;
 
     if (task.report) {
         task.report = true;
@@ -49,16 +52,6 @@ async function checkTask(task: Task) {
     if (!["API", "HTML"].includes(task.type)) {
         throw new Error(`type must be in ${["API", "HTML"].join(',')}`);
     }
-
-    // if (task.compute === "EC2") {
-    //     if (!task.keyName) {
-    //         throw new Error("KeyName must be set when compute is EC2");
-    //     }
-    //
-    //     if (!task.instanceType) {
-    //         task.instanceType = 't2.micro';
-    //     }
-    // }
 
     if (!task.type) {
         throw new Error("type is empty");
@@ -111,6 +104,7 @@ async function checkTask(task: Task) {
     if (task.c === undefined) {
         task.c = 1;
     } else {
+        task.c = parseInt(task.c.toString());
         if (task.c <= 0) {
             throw new Error("c must be greater than 0");
         }
@@ -130,7 +124,6 @@ async function checkTask(task: Task) {
             throw new Error("qps must be greater than 0");
         }
     }
-
 
     if (task.delay !== undefined) {
         task.delay = parseInt(task.delay.toString());
@@ -222,6 +215,7 @@ async function checkTask(task: Task) {
         url,
         status,
         qps,
+        version
     } = task;
 
     return {
@@ -243,7 +237,8 @@ async function checkTask(task: Task) {
         timeout,
         url,
         status,
-        qps
+        qps,
+        version
     } as Task;
 }
 

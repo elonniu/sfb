@@ -13,6 +13,8 @@ const dockerImage = 'public.ecr.aws/elonniu/serverless-bench:latest';
 
 export function Stack({stack}: StackContext) {
 
+    const version = JSON.parse(fs.readFileSync("./package.json", 'utf-8')).version;
+
     const vpc = new Vpc(stack, "vpc", {
         maxAzs: 2,
         natGateways: 1,
@@ -232,6 +234,7 @@ export function Stack({stack}: StackContext) {
         memorySize: 2048,
         environment: {
             TASK_GENERATE_FUNCTION: taskGenerateFunction.functionName,
+            TASK_VERSION: version,
         },
     });
 
@@ -354,7 +357,7 @@ export function Stack({stack}: StackContext) {
         },
     });
 
-    stack.tags.setTag("version", JSON.parse(fs.readFileSync("./package.json", 'utf-8')).version);
+    stack.tags.setTag("version", version);
 
     stack.addOutputs({
         stack: stackUrl(stack.stackId, stack.region),

@@ -15,57 +15,41 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-type TaskType string
-
-const (
-	TaskTypeApi  TaskType = "API"
-	TaskTypeHtml TaskType = "HTML"
-)
-
-type HttpMethod string
-
-const (
-	HttpMethodGet  HttpMethod = "GET"
-	HttpMethodPost HttpMethod = "POST"
-	HttpMethodPut  HttpMethod = "PUT"
-)
-
-type ComputeType string
-
-const (
-	ComputeTypeLambda  ComputeType = "Lambda"
-	ComputeTypeEC2     ComputeType = "EC2"
-	ComputeTypeFargate ComputeType = "Fargate"
-	ComputeTypeBatch   ComputeType = "Batch"
-)
-
-type HttpStatusCode int
-
-type Execution struct {
-	// define the fields of Execution here
+type Task struct {
+	ShouldEnd   bool          `json:"shouldEnd"`
+	Report      bool          `json:"report"`
+	Name        string        `json:"name"`
+	Version     string        `json:"version"`
+	TaskId      string        `json:"taskId"`
+	Type        string        `json:"type"` // Assuming TaskType is a string in TypeScript
+	Client      *int          `json:"client"`
+	URL         string        `json:"url"`
+	Method      string        `json:"method"`  // Assuming Method is a string in TypeScript
+	Compute     string        `json:"compute"` // Assuming Compute is a string in TypeScript
+	Qps         *int          `json:"qps"`
+	N           *int          `json:"n"`
+	C           int           `json:"c"`
+	Delay       *int          `json:"delay"`
+	Regions     []string      `json:"regions"`
+	Region      string        `json:"region"`
+	NPerClient  *int          `json:"nPerClient"`
+	Timeout     time.Duration `json:"timeout"`
+	SuccessCode int           `json:"successCode"` // Assuming HttpStatusCode is an int in TypeScript
+	StartTime   string        `json:"startTime"`
+	CreatedAt   string        `json:"createdAt"`
+	EndTime     string        `json:"endTime"`
+	States      interface{}   `json:"states"` // Assuming States is an arbitrary JSON structure
+	Status      string        `json:"status"` // Assuming Status is a string in TypeScript
 }
 
-type Task struct {
-	ShouldEnd   bool
-	Report      bool
-	Name        string
-	TaskId      string
-	Type        TaskType
-	Client      *int
-	URL         string
-	Method      HttpMethod
-	Compute     ComputeType
-	QPS         *int
-	N           *int
-	C           int
-	Regions     []string
-	Region      string
-	NPerClient  *int
-	Timeout     time.Duration
-	SuccessCode HttpStatusCode
-	StartTime   string
-	CreatedAt   string
-	EndTime     string
+func UnmarshalTask(data string) (Task, error) {
+	fmt.Println(data)
+	var task Task
+	err := json.Unmarshal([]byte(data), &task)
+	if err != nil {
+		return Task{}, err
+	}
+	return task, nil
 }
 
 func main() {
@@ -73,33 +57,25 @@ func main() {
 	if envJson == "" {
 		lambda.Start(HandleSNSEvent)
 	} else {
-		var task Task
-		err := json.Unmarshal([]byte(envJson), &task)
-		if err != nil {
-			fmt.Println(err)
-		}
-		ProcessTask(task)
+		ProcessTask(envJson)
 	}
 }
 
 func HandleSNSEvent(ctx context.Context, snsEvent events.SNSEvent) error {
 	for _, record := range snsEvent.Records {
-		var task Task
-		err := json.Unmarshal([]byte(record.SNS.Message), &task)
-		if err != nil {
-			log.Printf("Error unmarshaling SNS message: %v", err)
-			continue
-		}
-		fmt.Println(record.SNS.MessageID)
-		ProcessTask(task)
+		ProcessTask(record.SNS.Message)
 	}
 	return nil
 }
 
-func ProcessTask(task Task) {
+func ProcessTask(data string) {
 
-	taskJson, _ := json.Marshal(task)
-	fmt.Println(string(taskJson))
+	task, err := UnmarshalTask(data)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	creationTime, err := time.Parse(time.RFC3339, task.CreatedAt)
 	if err != nil {
@@ -129,10 +105,10 @@ func ProcessTask(task Task) {
 	}
 
 	if task.URL != "" {
-		if task.QPS != nil {
+		if task.Qps != nil {
 			for {
 				var wg sync.WaitGroup
-				for i := 0; i < *task.QPS; i++ {
+				for i := 0; i < *task.Qps; i++ {
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
@@ -160,11 +136,11 @@ func FetchAndMeasure(task Task) {
 
 	task.Timeout *= time.Millisecond
 
-	if task.Type == TaskTypeApi {
+	if task.Type == "API" {
 		FetchAndMeasureApi(task)
 	}
 
-	if task.Type == TaskTypeHtml {
+	if task.Type == "HTML" {
 		FetchAndMeasureHtml(task)
 	}
 
@@ -188,7 +164,7 @@ func FetchAndMeasureApi(task Task) {
 
 	duration := time.Since(start)
 
-	fmt.Printf("%s %d\n %s", task.URL, resp.StatusCode, duration)
+	fmt.Printf("%s %d %s", task.URL, resp.StatusCode, duration)
 }
 
 func FetchAndMeasureHtml(task Task) {

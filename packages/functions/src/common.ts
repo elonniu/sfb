@@ -15,6 +15,7 @@ export type Compute = "Lambda" | "Fargate" | "Batch";
 export type Status = "Pending" | "Running" | "Failed" | "Done";
 
 export interface Task {
+    version: string;
     shouldEnd: boolean;
     report: boolean;
     name: string;
@@ -24,8 +25,6 @@ export interface Task {
     url: string;
     method: Method;
     compute: Compute;
-    keyName?: string;
-    instanceType?: string;
     qps?: number;
     n?: number;
     c: number;
