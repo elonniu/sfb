@@ -281,7 +281,7 @@ function taskList(data) {
         return;
     }
 
-    table(data, ["taskId", "name", "region", "status", "startTime", "endTime", "url"]);
+    table(data, ["taskId", "name", "type", "region", "status", "startTime", "endTime", "createdAt"]);
 }
 
 async function update() {
