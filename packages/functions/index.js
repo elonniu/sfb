@@ -26,20 +26,6 @@ program
     .option('--region <string>', 'AWS region')
     .option('--profile <string>', 'AWS profile');
 
-// program
-//     .command('dev')
-//     .description('Run the dev script')
-//     .action(() => {
-//         const options = program.opts();
-//         const args = [];
-//         options.region && args.push(`--region=${options.region}`);
-//         options.profile && args.push(`--profile=${options.profile}`);
-//         const child = spawn('npm',
-//             ['run', 'dev', '--', ...args],
-//             {stdio: 'inherit', cwd: getRoot()}
-//         );
-//     });
-
 program
     .command('deploy')
     .description('Deploy the app in a region')
@@ -86,13 +72,21 @@ program
     .action(async (taskId, options) => {
         await update();
         if (taskId) {
-            const res = await invoke('taskGetFunction', {taskId});
-            showTask(res);
+            await getTask(taskId);
         } else {
-            const res = await invoke('taskListFunction');
-            taskList(res.Items);
+            await getTasks();
         }
     });
+
+async function getTask(taskId) {
+    const res = await invoke('taskGetFunction', {taskId}, 'Task Overview:');
+    showTask(res);
+}
+
+async function getTasks() {
+    const res = await invoke('taskListFunction');
+    taskList(res.Items);
+}
 
 program
     .command('rm [taskId]')
@@ -100,11 +94,9 @@ program
     .action(async (taskId, options) => {
         await update();
         if (taskId) {
-            const res = await invoke('taskDeleteFunction', {taskId});
-            taskList(res);
+            await invoke('taskDeleteFunction', {taskId}, 'Task was deleted, it\'s states will be abort in a few seconds.');
         } else {
-            const res = await invoke('taskEmptyFunction');
-            taskList(res);
+            await invoke('taskEmptyFunction', {}, 'Tasks was empty, it\'s states will be abort in a few seconds.');
         }
     });
 
@@ -131,7 +123,7 @@ program
     .action(async (options) => {
         await update();
         const stage = program.opts().stage ? program.opts().stage : 'prod';
-        const spinner = ora('Fetching...').start();
+        const spinner = ora('Processing...').start();
         const stackName = `serverless-bench-${stage}`;
         const stacks = await stackExistsAndCompleteInAllRegions(stackName);
         if (stacks.length === 0) {
@@ -180,8 +172,6 @@ program
     .option('--url <string>', 'URL')
     .option('--method <string>', 'Method, default GET')
     .option('--compute <string>', 'Compute Type, default Fargate, others: Lambda, Batch')
-    // .option('--key-name <string>', 'Key name')
-    // .option('--instance-type <string>', 'Instance type')
     .option('--qps <number>', 'QPS')
     .option('--n <number>', 'Number of requests')
     .option('--c <number>', 'Concurrency')
@@ -201,7 +191,7 @@ program
             task.regions = task.regions.split(',');
         }
         const res = await invoke('CreateTask', task, 'Task created!');
-        console.log(chalk.green("You can get states by run: ") + chalk.yellow(`ibench ls ${res.taskId} ${stageParam()}`));
+        await getTask(res.taskId);
     });
 
 program.parse(process.argv);
@@ -214,7 +204,7 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
 
     const client = new LambdaClient({region: program.opts().region});
 
-    const spinner = ora('Fetching...').start();
+    const spinner = ora('Processing...').start();
     const stage = program.opts().stage ? program.opts().stage : 'prod';
     const FunctionName = `serverless-bench-${stage}-${name}`;
 
@@ -236,6 +226,11 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
             if (result.log) {
                 console.log(chalk.yellow(`Log: ${result.log}`));
             }
+            process.exit(1);
+        }
+
+        if (result.success !== true) {
+            spinner.fail(chalk.red(JSON.stringify(result, null, 2)));
             process.exit(1);
         }
 
@@ -286,24 +281,7 @@ function taskList(data) {
         return;
     }
 
-    let list = [];
-
-    data.forEach(item => {
-        const row = {
-            taskId: item.taskId,
-            name: item.name,
-            region: item.region,
-            url: item.url,
-            qpsOrN: (item.qps ? 'qps ' : 'n ') + (item.qps ? item.qps : item.n),
-            c: item.c,
-            startTime: item.startTime,
-            endTime: item.endTime,
-            status: item.status
-        };
-        list.push(row);
-    });
-
-    table(list, ["taskId", "name", "region", "status", "qpsOrN", "c", "startTime", "endTime", "url"]);
+    table(data, ["taskId", "name", "region", "status", "startTime", "endTime", "url"]);
 }
 
 async function update() {
