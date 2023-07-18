@@ -94,7 +94,7 @@ func ProcessTask(data string) {
 		return
 	}
 	for time.Now().Before(startTime) {
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 	}
 	task.Latency = time.Since(startTime).Milliseconds()
 	fmt.Printf("Task Latency %d ms\n", task.Latency)
