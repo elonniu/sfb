@@ -21,7 +21,7 @@ import {
 const program = new Command();
 
 program
-    .version(await currentVersion())
+    .version(await currentVersion('sfb'))
     .option('--stage <string>', 'stage option')
     .option('--region <string>', 'AWS region')
     .option('--profile <string>', 'AWS profile');
@@ -140,7 +140,7 @@ program
                 }
             }
             if (stack.version) {
-                if (stack.version === await currentVersion()) {
+                if (stack.version === await currentVersion('sfb')) {
                     stack.version = chalk.green(stack.version);
                     stack.needUpdate = false;
                 } else {
@@ -155,7 +155,7 @@ program
                     "Need update version "
                     + chalk.red(stack.version)
                     + " -> "
-                    + chalk.green(await currentVersion())
+                    + chalk.green(await currentVersion('sfb'))
                     + " Command: "
                     + chalk.yellow(`sfb deploy --region ${stack.region} ${stageParam()}`)
                 );
