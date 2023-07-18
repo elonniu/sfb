@@ -3,7 +3,7 @@ import {stackUrl} from "sst-helper";
 import {Choice, Condition, JsonPath, Pass, StateMachine, TaskInput} from 'aws-cdk-lib/aws-stepfunctions';
 import {LambdaInvoke} from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as events from "aws-cdk-lib/aws-events";
-import {CfnInstanceProfile, ManagedPolicy, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
+import {ManagedPolicy, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {SecurityGroup, SubnetType, Vpc} from "aws-cdk-lib/aws-ec2";
 import * as batch from "aws-cdk-lib/aws-batch";
 import {Cluster, Compatibility, ContainerImage, LogDrivers, NetworkMode, TaskDefinition} from "aws-cdk-lib/aws-ecs";
@@ -36,7 +36,7 @@ export function Stack({stack}: StackContext) {
 
     const ecsCluster = new Cluster(stack, "cluster", {
         vpc,
-        clusterName: `${stack.stackName}-cluster`,
+        clusterName: stack.stackName,
         containerInsights: true,
     });
 
@@ -72,7 +72,7 @@ export function Stack({stack}: StackContext) {
     }));
 
     const batchComputeEnvironment = new batch.CfnComputeEnvironment(stack, 'computeEnvironment', {
-        computeEnvironmentName: `${stack.stackName}-compute-environment`,
+        computeEnvironmentName: stack.stackName,
         type: 'MANAGED',
         computeResources: {
             type: 'FARGATE',
@@ -115,18 +115,6 @@ export function Stack({stack}: StackContext) {
                 }
             }
         },
-    });
-
-    const ec2Role = new Role(stack, "ec2Role", {
-        assumedBy: new ServicePrincipal("ec2.amazonaws.com"),
-        managedPolicies: [
-            ManagedPolicy.fromAwsManagedPolicyName("AmazonS3FullAccess"),
-            ManagedPolicy.fromAwsManagedPolicyName("AmazonEC2FullAccess"),
-        ]
-    });
-
-    const ec2InstanceProfile = new CfnInstanceProfile(stack, "ec2InstanceProfile", {
-        roles: [ec2Role.roleName],
     });
 
     const bucket = new Bucket(stack, "bucket");
@@ -179,7 +167,7 @@ export function Stack({stack}: StackContext) {
     requestLambdaTask.next(checkRequestShouldEnd);
 
     const requestStateMachine = new StateMachine(stack, 'RequestStateMachine', {
-        stateMachineName: `${stack.stackName}-RequestStateMachine`,
+        stateMachineName: stack.stackName,
         definition: checkRequestShouldEnd,
     });
 
@@ -208,7 +196,6 @@ export function Stack({stack}: StackContext) {
             VPC_SUBNETS: JSON.stringify(vpcSubnets),
             SECURITY_GROUP_ID: securityGroup.securityGroupId,
             REQUEST_SF_ARN: requestStateMachine.stateMachineArn,
-            INSTANCE_PROFILE_NAME: ec2InstanceProfile.instanceProfileName || "",
             BUCKET_NAME: bucket.bucketName,
             TASK_DEFINITION_FAMILY: ecsTaskDefinition.family,
             CLUSTER_NAME: ecsCluster.clusterName,
