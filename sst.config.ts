@@ -5,7 +5,7 @@ import {RemovalPolicy} from "aws-cdk-lib";
 export default {
     config(_input) {
         return {
-            name: "serverless-bench",
+            name: "sfb",
             region: "ap-southeast-1",
         };
     },

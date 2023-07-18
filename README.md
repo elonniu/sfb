@@ -1,4 +1,4 @@
-# Serverless Bench
+# Serverless Force Bench
 
 ## 1. What is this?
 
@@ -24,7 +24,7 @@ This is a tool for bench testing by AWS Serverless.
 ### 2.3 Show Help Options
 
 ```bash
-ibench help
+sfb help
 
 ```
 
@@ -37,20 +37,20 @@ Before using CLI, you need to first deploy the base stack in your chosen region.
 ### 3.1 Deploy
 
 ```bash
-ibench deploy --region <your-region>
+sfb deploy --region <your-region>
 ```
 
 ### 3.1 Remove
 
 ```bash
-ibench remove --region <your-region>
+sfb remove --region <your-region>
 ```
 
 ### 3.2 List Deployed Regions
 
 ```bash
 # list all deployed regions
-ibench regions
+sfb regions
 
 ```
 
@@ -65,13 +65,13 @@ ibench regions
 
 ```bash
 # show how create a new task
-ibench create --help
+sfb create --help
 
 # create a new task in current region
-ibench create --n 1 --name test --delay 10 --type API --url https://api.com
+sfb create --n 1 --name test --delay 10 --type API --url https://api.com
 
 # create a new task in specific region(s)
-ibench create --n 1 --name test --delay 10 --type API --url https://api.com --regions ap-southeast-1,us-east-2
+sfb create --n 1 --name test --delay 10 --type API --url https://api.com --regions ap-southeast-1,us-east-2
 
 ```
 
@@ -79,10 +79,10 @@ ibench create --n 1 --name test --delay 10 --type API --url https://api.com --re
 
 ```bash
 # list all tasks
-ibench ls
+sfb ls
 
 # show a specific task detail
-ibench ls [taskId]
+sfb ls [taskId]
 
 ```
 
@@ -90,10 +90,10 @@ ibench ls [taskId]
 
 ```bash
 # remove all tasks
-ibench rm
+sfb rm
 
 # remove a specific task
-ibench rm [taskId]
+sfb rm [taskId]
 
 ```
 
@@ -101,7 +101,7 @@ ibench rm [taskId]
 
 ```bash
 # abort a specific task
-ibench abort <taskId>
+sfb abort <taskId>
 ```
 
 ## 5. What are the benefits of using Serverless?

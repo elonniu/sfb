@@ -5,7 +5,7 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@serverless-bench/core/*": ["../core/src/*"]
+      "@sfb/core/*": ["../core/src/*"]
     }
   }
 }

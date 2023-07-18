@@ -9,7 +9,7 @@ import * as batch from "aws-cdk-lib/aws-batch";
 import {Cluster, Compatibility, ContainerImage, LogDrivers, NetworkMode, TaskDefinition} from "aws-cdk-lib/aws-ecs";
 import * as fs from "fs";
 
-const dockerImage = 'public.ecr.aws/elonniu/serverless-bench:latest';
+const dockerImage = 'public.ecr.aws/elonniu/sfb:latest';
 
 export function Stack({stack}: StackContext) {
 

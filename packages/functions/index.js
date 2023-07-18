@@ -106,7 +106,7 @@ program
     .action(async (taskId, options) => {
         await update();
         await invoke('taskAbortFunction', {taskId}, 'Task abort command was sent, It will take a few seconds to take effects.');
-        console.log(chalk.green("You can get states by run: ") + chalk.yellow(`ibench ls ${taskId} ${stageParam()}`));
+        console.log(chalk.green("You can get states by run: ") + chalk.yellow(`sfb ls ${taskId} ${stageParam()}`));
     });
 
 program
@@ -124,7 +124,7 @@ program
         await update();
         const stage = program.opts().stage ? program.opts().stage : 'prod';
         const spinner = ora('Processing...').start();
-        const stackName = `serverless-bench-${stage}`;
+        const stackName = `sfb-${stage}`;
         const stacks = await stackExistsAndCompleteInAllRegions(stackName);
         if (stacks.length === 0) {
             spinner.fail("No deployed regions");
@@ -157,7 +157,7 @@ program
                     + " -> "
                     + chalk.green(await currentVersion())
                     + " Command: "
-                    + chalk.yellow(`ibench deploy --region ${stack.region} ${stageParam()}`)
+                    + chalk.yellow(`sfb deploy --region ${stack.region} ${stageParam()}`)
                 );
             }
         }
@@ -206,7 +206,7 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
 
     const spinner = ora('Processing...').start();
     const stage = program.opts().stage ? program.opts().stage : 'prod';
-    const FunctionName = `serverless-bench-${stage}-${name}`;
+    const FunctionName = `sfb-${stage}-${name}`;
 
     const params = {
         FunctionName,
@@ -244,8 +244,8 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
     } catch (e) {
         if (e.message.indexOf('Function not found') !== -1) {
             spinner.fail(chalk.red('Current region not deployed stack yet.'));
-            spinner.fail(`Your can run ${chalk.yellow('ibench deploy --region <region>')} to deploy the stack in current region before use.`);
-            spinner.fail('Or run ' + chalk.yellow('ibench regions') + ' to show all deployed regions and ' + `add ${chalk.yellow('--region <region>')} to specify the region for you command.`);
+            spinner.fail(`Your can run ${chalk.yellow('sfb deploy --region <region>')} to deploy the stack in current region before use.`);
+            spinner.fail('Or run ' + chalk.yellow('sfb regions') + ' to show all deployed regions and ' + `add ${chalk.yellow('--region <region>')} to specify the region for you command.`);
         } else {
             spinner.fail(e.message);
         }
@@ -287,11 +287,11 @@ function taskList(data) {
 async function update() {
     const spinner = ora('Waiting...').start();
     try {
-        const response = await axios.get('https://registry.npmjs.org/ibench');
+        const response = await axios.get('https://registry.npmjs.org/sfb');
         const serverVersion = response.data['dist-tags'].latest;
         if (serverVersion !== program.version()) {
             spinner.stop();
-            console.log(chalk.yellow(`A new version ${chalk.green(serverVersion)} is available. Your version is ${chalk.red(program.version())}, Please update by run: ${chalk.blue('npm i -g ibench')}`));
+            console.log(chalk.yellow(`A new version ${chalk.green(serverVersion)} is available. Your version is ${chalk.red(program.version())}, Please update by run: ${chalk.blue('npm i -g sfb')}`));
             process.exit(1);
         }
     } catch (error) {
@@ -352,7 +352,7 @@ function showTask(res) {
     table(list, ["status", "jobUrl"]);
     console.log(
         "Refresh Task Status: "
-        + chalk.yellow(`ibench ls ${res.taskId} ${stageParam()}`)
+        + chalk.yellow(`sfb ls ${res.taskId} ${stageParam()}`)
     );
 }
 
