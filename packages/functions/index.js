@@ -42,7 +42,7 @@ program
         args.push(`--stage=prod`);
         const child = spawn('npm',
             ['run', 'deploy', '--', ...args],
-            {stdio: 'inherit', cwd: getRoot()}
+            {stdio: 'inherit', cwd: getRoot('sfb')}
         );
     });
 
@@ -62,7 +62,7 @@ program
         args.push(`--stage=prod`);
         const child = spawn('npm',
             ['run', 'remove', '--', ...args],
-            {stdio: 'inherit', cwd: getRoot()}
+            {stdio: 'inherit', cwd: getRoot('sfb')}
         );
     });
 
