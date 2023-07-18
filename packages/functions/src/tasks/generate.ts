@@ -9,11 +9,6 @@ import {runTasks} from "../lib/ecs";
 import {StartExecutionInput} from "aws-sdk/clients/stepfunctions";
 import {startExecutionBatch} from "../lib/sf";
 
-const {
-    INSTANCE_PROFILE_NAME,
-    BUCKET_NAME
-} = process.env;
-
 const requestStateMachineArn = process.env.REQUEST_SF_ARN || "";
 const current_region = process.env.AWS_REGION || "";
 const {
@@ -24,12 +19,14 @@ const {
     CLUSTER_NAME,
     JOB_DEFINITION,
     JOB_QUEUE,
+    CLUSTER_ARN,
 } = process.env;
 
 export async function handler(task: Task) {
     task.region = current_region;
 
     if (task.compute === "Fargate") {
+        task.cluster = CLUSTER_ARN;
         task.states = await createEcsTasks(task, current_region);
     } else if (task.compute === "Batch") {
         task.states = await createJobs(task, current_region);
@@ -45,7 +42,7 @@ export async function handler(task: Task) {
         },
     } as AWS.DynamoDB.DocumentClient.PutItemInput).promise();
 
-    return task.states;
+    return task;
 }
 
 async function createJobs(task: Task, region: string) {

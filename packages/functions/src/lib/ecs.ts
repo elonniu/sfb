@@ -1,20 +1,20 @@
 import AWS from "aws-sdk";
 import {RunTaskRequest, StopTaskRequest} from "aws-sdk/clients/ecs";
 import {Task} from "../common";
+import console from "console";
 
-const CLUSTER_ARN = process.env.CLUSTER_ARN || "";
-
-async function batchStopTaskByRegion(task: string, region: string) {
+async function batchStopTaskByRegion(taskArn: string, task: Task) {
     try {
         const params: StopTaskRequest = {
-            task,
-            cluster: CLUSTER_ARN,
+            task: taskArn,
+            cluster: task.cluster,
         };
 
-        const client = new AWS.ECS({region});
+        const client = new AWS.ECS({region: task.region});
         await client.stopTask(params).promise();
-    } catch (e) {
-        console.error("batchStopTaskByRegion error: ", e);
+    } catch (e: any) {
+        console.log({taskArn, region: task.region, cluster: task.cluster});
+        console.error("batchStopTaskByRegion error: ", e.message);
     }
 }
 
@@ -22,16 +22,16 @@ export async function batchStopTasks(globalTasks: any[]) {
 
     let promises = [];
 
-    for (let current of globalTasks) {
+    for (let task of globalTasks) {
 
-        if (current.compute !== "Fargate") {
+        if (task.compute !== "Fargate") {
             continue;
         }
 
-        if (current.states) {
-            for (const key in current.states) {
-                if (current.states.hasOwnProperty(key)) {
-                    promises.push(batchStopTaskByRegion(key, current.region));
+        if (task.states) {
+            for (const key in task.states) {
+                if (task.states.hasOwnProperty(key)) {
+                    promises.push(batchStopTaskByRegion(key, task));
                 }
             }
         }

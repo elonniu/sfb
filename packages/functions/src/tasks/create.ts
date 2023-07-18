@@ -27,11 +27,6 @@ export async function handler(event: Task, context: any) {
 
 async function checkTask(task: Task) {
 
-    task.version = TASK_VERSION;
-    task.client = 1;
-    task.envInitDuration = -1;
-    task.latency = -1;
-
     if (task.report) {
         task.report = true;
     }
@@ -194,9 +189,13 @@ async function checkTask(task: Task) {
         await checkStackInRegions(StackName, task.regions, SST_APP);
     }
 
-    task.taskId = nanoid(15);
+    task.taskId = nanoid(12);
     task.createdAt = new Date().toISOString();
     task.status = "Pending";
+    task.version = TASK_VERSION;
+    task.client = 1;
+    task.envInitDuration = -1;
+    task.latency = -1;
 
     const {
         c,

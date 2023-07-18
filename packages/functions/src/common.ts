@@ -39,6 +39,7 @@ export interface Task {
     startTime: string;
     createdAt: string;
     endTime: string;
+    cluster?: string;
     states?: any;
     status: Status;
 }

@@ -1,7 +1,6 @@
 import {Table} from "sst/node/table";
 import {batchDelete, dynamoDb} from "../lib/ddb";
 import {batchStopExecutions} from "../lib/sf";
-import {batchStopEc2s} from "../lib/ec2";
 import {batchStopTasks} from "../lib/ecs";
 import {bad, getTaskGlobal, ok} from "../common";
 import {batchTerminateJobs} from "../lib/batch";
@@ -24,7 +23,6 @@ export async function handler(event: any, context: any) {
                 const globalTasks = await getTaskGlobal(taskId, region);
 
                 if (globalTasks.length > 0) {
-                    await batchStopEc2s(globalTasks);
                     await batchStopTasks(globalTasks);
                     await batchTerminateJobs(globalTasks);
                     await batchStopExecutions(globalTasks);

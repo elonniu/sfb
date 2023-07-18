@@ -113,8 +113,8 @@ program
     .description('Abort a task')
     .action(async (taskId, options) => {
         await update();
-        const res = await invoke('taskAbortFunction', {taskId});
-        taskList(res);
+        await invoke('taskAbortFunction', {taskId}, 'Task abort command was sent, It will take a few seconds to take effects.');
+        console.log(chalk.green("You can get states by run: ") + chalk.yellow(`ibench ls ${taskId} ${stageParam()}`));
     });
 
 program
@@ -242,7 +242,7 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
         if (result.data && result.data.Items && result.data.Items.length === 0) {
             spinner.succeed("No data");
         } else {
-            spinner.succeed(tip);
+            spinner.succeed(chalk.green(tip));
         }
 
         return result.data;
