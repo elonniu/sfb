@@ -107,6 +107,7 @@ func ProcessTask(data string) {
 	if task.URL != "" {
 		if task.Qps != nil {
 			for {
+
 				var wg sync.WaitGroup
 				for i := 0; i < *task.Qps; i++ {
 					wg.Add(1)
@@ -116,6 +117,7 @@ func ProcessTask(data string) {
 					}()
 				}
 				wg.Wait()
+
 				time.Sleep(time.Second)
 				if endTime != nil && time.Now().After(*endTime) {
 					break
@@ -146,6 +148,10 @@ func FetchAndMeasure(task Task) {
 
 }
 
+func ua(task Task) string {
+	return "iBench " + task.Version + " " + task.Compute + " " + task.TaskId
+}
+
 func FetchAndMeasureApi(task Task) {
 	ctx, cancel := context.WithTimeout(context.Background(), task.Timeout)
 	defer cancel()
@@ -153,6 +159,7 @@ func FetchAndMeasureApi(task Task) {
 	start := time.Now()
 
 	req, _ := http.NewRequest(http.MethodGet, task.URL, nil)
+	req.Header.Set("User-Agent", ua(task))
 	req = req.WithContext(ctx)
 	resp, err := http.DefaultClient.Do(req)
 
@@ -169,6 +176,13 @@ func FetchAndMeasureApi(task Task) {
 
 func FetchAndMeasureHtml(task Task) {
 	ctx, cancel := context.WithTimeout(context.Background(), task.Timeout)
+	defer cancel()
+
+	options := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.UserAgent(ua(task)),
+	)
+
+	ctx, cancel = chromedp.NewExecAllocator(ctx, options...)
 	defer cancel()
 
 	ctx, cancel = chromedp.NewContext(ctx)
