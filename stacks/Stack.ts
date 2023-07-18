@@ -140,9 +140,9 @@ export function Stack({stack}: StackContext) {
         },
     });
 
-    const sfRequestFunction = new Function(stack, "SfRequestFunction", {
-        functionName: `${stack.stackName}-sfRequestFunction`,
-        handler: "packages/functions/src/sf/request.handler",
+    const executionFunction = new Function(stack, "executionFunction", {
+        functionName: `${stack.stackName}-executionFunction`,
+        handler: "packages/functions/src/sf/execution.handler",
         memorySize: 4048,
         permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData', 'lambda:InvokeFunction'],
         bind: [topic],
@@ -152,7 +152,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const requestLambdaTask = new LambdaInvoke(stack, 'Invoke Request Lambda', {
-        lambdaFunction: sfRequestFunction,
+        lambdaFunction: executionFunction,
         payload: TaskInput.fromObject({
             ExecutionId: JsonPath.stringAt('$$.Execution.Id'),
             input: TaskInput.fromJsonPathAt('$.Payload'),
