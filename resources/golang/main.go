@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go/service/kinesis"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,8 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/chromedp/chromedp"
 )
 
@@ -27,6 +30,7 @@ type Task struct {
 	URL             string        `json:"url"`
 	Method          string        `json:"method"`
 	Compute         string        `json:"compute"`
+	Kds             string        `json:"kds"`
 	Qps             *int          `json:"qps"`
 	N               *int          `json:"n"`
 	C               int           `json:"c"`
@@ -177,6 +181,32 @@ func FetchAndMeasureApi(task Task) {
 	duration := time.Since(start)
 
 	fmt.Printf("%s %d %s", task.URL, resp.StatusCode, duration)
+
+	if task.Report != true {
+		return
+	}
+
+	sess := session.Must(session.NewSession(&aws.Config{
+		Region: aws.String(task.Region),
+	}))
+
+	svc := kinesis.New(sess)
+
+	data, err := json.Marshal(task)
+	if err != nil {
+		panic(err)
+	}
+
+	input := &kinesis.PutRecordInput{
+		Data:         data,
+		StreamName:   aws.String(task.Kds),
+		PartitionKey: aws.String("taskId"),
+	}
+
+	_, err = svc.PutRecord(input)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func FetchAndMeasureHtml(task Task) {

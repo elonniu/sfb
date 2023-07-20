@@ -33,6 +33,7 @@ export interface Task {
     delay?: number;
     regions: string[];
     region: string;
+    kds: string;
     nPerClient?: number,
     timeout: number;
     successCode: HttpStatusCode;

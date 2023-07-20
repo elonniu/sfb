@@ -20,10 +20,12 @@ const {
     JOB_DEFINITION,
     JOB_QUEUE,
     CLUSTER_ARN,
+    KDS_NAME
 } = process.env;
 
 export async function handler(task: Task) {
     task.region = current_region;
+    task.kds = KDS_NAME || "";
 
     if (task.compute === "Fargate") {
         task.cluster = CLUSTER_ARN;

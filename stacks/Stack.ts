@@ -1,4 +1,4 @@
-import {Bucket, EventBus, Function, StackContext, Table, Topic} from "sst/constructs";
+import {Bucket, EventBus, Function, KinesisStream, StackContext, Table, Topic} from "sst/constructs";
 import {stackUrl} from "sst-helper";
 import {Choice, Condition, JsonPath, Pass, StateMachine, TaskInput} from 'aws-cdk-lib/aws-stepfunctions';
 import {LambdaInvoke} from 'aws-cdk-lib/aws-stepfunctions-tasks';
@@ -8,6 +8,8 @@ import {SecurityGroup, SubnetType, Vpc} from "aws-cdk-lib/aws-ec2";
 import * as batch from "aws-cdk-lib/aws-batch";
 import {Cluster, Compatibility, ContainerImage, LogDrivers, NetworkMode, TaskDefinition} from "aws-cdk-lib/aws-ecs";
 import * as fs from "fs";
+import {Duration} from "aws-cdk-lib";
+import {StreamMode} from "aws-cdk-lib/aws-kinesis";
 
 const dockerImage = 'public.ecr.aws/elonniu/sfb:latest';
 
@@ -179,6 +181,16 @@ export function Stack({stack}: StackContext) {
         bind: [taskTable],
     });
 
+    const kds = new KinesisStream(stack, "Stream", {
+        cdk: {
+            stream: {
+                retentionPeriod: Duration.days(1),
+                streamMode: StreamMode.ON_DEMAND
+            },
+        },
+    });
+    kds.cdk.stream.grantWrite(ecsTaskExecutionRole);
+
     const taskGenerateFunction = new Function(stack, "taskGenerateFunction", {
         functionName: `${stack.stackName}-taskGenerateFunction`,
         handler: "packages/functions/src/tasks/generate.handler",
@@ -201,10 +213,16 @@ export function Stack({stack}: StackContext) {
             CONTAINER_NAME: container.containerName,
             JOB_DEFINITION: jobDefinition.ref,
             JOB_QUEUE: jobQueue.ref,
+            KDS_NAME: kds.streamName,
         },
     });
     taskGenerateFunction.addToRolePolicy(new PolicyStatement({
         actions: ['batch:SubmitJob'],
+        resources: ['*'],
+    }) as any);
+
+    taskFunction.addToRolePolicy(new PolicyStatement({
+        actions: ['kinesis:PutRecord'],
         resources: ['*'],
     }) as any);
 
@@ -281,6 +299,7 @@ export function Stack({stack}: StackContext) {
         handler: "packages/functions/src/eda/batchJobStateChange.handler",
         bind: [taskTable]
     });
+
 
     new EventBus(stack, "Bus", {
         cdk: {
