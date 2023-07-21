@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/kinesis"
+	"github.com/chromedp/cdproto/network"
 	"log"
 	"net/http"
 	"os"
@@ -182,6 +183,10 @@ func FetchAndMeasureApi(task Task) {
 
 	fmt.Printf("%s %d %s", task.URL, resp.StatusCode, duration)
 
+	Report(task)
+}
+
+func Report(task Task) {
 	if task.Report != true {
 		return
 	}
@@ -223,10 +228,21 @@ func FetchAndMeasureHtml(task Task) {
 	ctx, cancel = chromedp.NewContext(ctx)
 	defer cancel()
 
+	chromedp.ListenTarget(ctx, func(ev interface{}) {
+		switch ev := ev.(type) {
+		case *network.EventResponseReceived:
+			resp := ev.Response
+			if len(resp.Headers) != 0 && resp.URL == task.URL {
+				fmt.Printf("status: %d, size: %d, url: %s\n", resp.Status, resp.EncodedDataLength, resp.URL)
+			}
+		}
+	})
+
 	start := time.Now()
 
 	var buf []byte
 	err := chromedp.Run(ctx, chromedp.Tasks{
+		network.Enable(),
 		chromedp.Navigate(task.URL),
 		chromedp.CaptureScreenshot(&buf),
 	})
@@ -237,4 +253,6 @@ func FetchAndMeasureHtml(task Task) {
 
 	loadTime := time.Since(start)
 	log.Printf("Page loaded in: %s", loadTime)
+
+	Report(task)
 }
