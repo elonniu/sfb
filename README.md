@@ -17,7 +17,7 @@ This is a tool for bench testing by AWS Serverless.
 ### 2.2 Install the CLI
 
 ```bash
--
+npm i -g sfb
 
 ```
 
