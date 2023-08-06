@@ -1,5 +1,5 @@
-import {Bucket, EventBus, Function, KinesisStream, StackContext, Table, Topic} from "sst/constructs";
-import {stackUrl} from "sst-helper";
+import {EventBus, Function, KinesisStream, StackContext, Table, Topic} from "sst/constructs";
+import {kdsUrl, stackUrl} from "sst-helper";
 import {Choice, Condition, JsonPath, Pass, StateMachine, TaskInput} from 'aws-cdk-lib/aws-stepfunctions';
 import {LambdaInvoke} from 'aws-cdk-lib/aws-stepfunctions-tasks';
 import * as events from "aws-cdk-lib/aws-events";
@@ -16,7 +16,7 @@ export function Stack({stack}: StackContext) {
 
     const version = JSON.parse(fs.readFileSync("./package.json", 'utf-8')).version;
 
-    const dockerImage = new assets.DockerImageAsset(stack, 'DockerImageAsset', {
+    const dockerImage = new assets.DockerImageAsset(stack, 'dockerImage', {
         directory: './resources/golang',
     });
 
@@ -45,14 +45,14 @@ export function Stack({stack}: StackContext) {
         containerInsights: true,
     });
 
-    const ecsTaskExecutionRole = new Role(stack, "ecsTaskExecutionRole", {
+    const ecsTaskExecutionRole = new Role(stack, "taskExecutionRole", {
         assumedBy: new ServicePrincipal("ecs-tasks.amazonaws.com"),
         managedPolicies: [
             ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"),
         ]
     });
 
-    const ecsTaskDefinition = new TaskDefinition(stack, "ecsTaskDefinition", {
+    const ecsTaskDefinition = new TaskDefinition(stack, "taskDefinition", {
         family: `${stack.stackName}-ecsTaskDefinition`,
         networkMode: NetworkMode.AWS_VPC,
         taskRole: ecsTaskExecutionRole,
@@ -62,7 +62,7 @@ export function Stack({stack}: StackContext) {
         compatibility: Compatibility.FARGATE,
     });
 
-    const container = ecsTaskDefinition.addContainer('Task', {
+    const container = ecsTaskDefinition.addContainer('task', {
         image: ContainerImage.fromRegistry(dockerImage.imageUri),
         logging: LogDrivers.awsLogs({streamPrefix: 'TaskLogs'}),
     });
@@ -87,8 +87,8 @@ export function Stack({stack}: StackContext) {
         },
     });
 
-    const jobQueue = new batch.CfnJobQueue(stack, 'JobQueue', {
-        jobQueueName: `${stack.stackName}-job-queue`,
+    const jobQueue = new batch.CfnJobQueue(stack, 'jobQueue', {
+        jobQueueName: `${stack.stackName}-jobQueue`,
         computeEnvironmentOrder: [{
             computeEnvironment: batchComputeEnvironment.ref,
             order: 1,
@@ -97,8 +97,8 @@ export function Stack({stack}: StackContext) {
         state: 'ENABLED',
     });
 
-    const jobDefinition = new batch.CfnJobDefinition(stack, 'JobDefinition', {
-        jobDefinitionName: `${stack.stackName}-job-definition`,
+    const jobDefinition = new batch.CfnJobDefinition(stack, 'jobDefinition', {
+        jobDefinitionName: `${stack.stackName}-jobDefinition`,
         type: 'container',
         platformCapabilities: ['FARGATE'],
         containerProperties: {
@@ -122,8 +122,6 @@ export function Stack({stack}: StackContext) {
         },
     });
 
-    const bucket = new Bucket(stack, "bucket");
-
     const taskTable = new Table(stack, "tasks", {
         fields: {
             taskId: "string",
@@ -136,7 +134,6 @@ export function Stack({stack}: StackContext) {
         handler: "resources/golang/main.go",
         runtime: "go1.x",
         architecture: "x86_64",
-        bind: [bucket],
     });
 
     const topic = new Topic(stack, "Topic", {
@@ -184,7 +181,7 @@ export function Stack({stack}: StackContext) {
         bind: [taskTable],
     });
 
-    const kds = new KinesisStream(stack, "Stream", {
+    const kds = new KinesisStream(stack, "stream", {
         cdk: {
             stream: {
                 retentionPeriod: Duration.days(1),
@@ -209,7 +206,6 @@ export function Stack({stack}: StackContext) {
             VPC_SUBNETS: JSON.stringify(vpcSubnets),
             SECURITY_GROUP_ID: securityGroup.securityGroupId,
             REQUEST_SF_ARN: requestStateMachine.stateMachineArn,
-            BUCKET_NAME: bucket.bucketName,
             TASK_DEFINITION_FAMILY: ecsTaskDefinition.family,
             CLUSTER_NAME: ecsCluster.clusterName,
             CLUSTER_ARN: ecsCluster.clusterArn,
@@ -352,6 +348,7 @@ export function Stack({stack}: StackContext) {
 
     stack.addOutputs({
         stack: stackUrl(stack.stackId, stack.region),
+        stream: kdsUrl(kds.streamName, stack.region),
     });
 
 }
