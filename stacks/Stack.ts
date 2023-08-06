@@ -12,13 +12,11 @@ import {Duration} from "aws-cdk-lib";
 import {StreamMode} from "aws-cdk-lib/aws-kinesis";
 import * as assets from 'aws-cdk-lib/aws-ecr-assets';
 
-const dockerImage = 'public.ecr.aws/elonniu/sfb:latest';
-
 export function Stack({stack}: StackContext) {
 
     const version = JSON.parse(fs.readFileSync("./package.json", 'utf-8')).version;
 
-    const dockerImageAsset = new assets.DockerImageAsset(stack, 'DockerImageAsset', {
+    const dockerImage = new assets.DockerImageAsset(stack, 'DockerImageAsset', {
         directory: './resources/golang',
     });
 
@@ -65,7 +63,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const container = ecsTaskDefinition.addContainer('Task', {
-        image: ContainerImage.fromRegistry(dockerImage),
+        image: ContainerImage.fromRegistry(dockerImage.imageUri),
         logging: LogDrivers.awsLogs({streamPrefix: 'TaskLogs'}),
     });
 
@@ -104,7 +102,7 @@ export function Stack({stack}: StackContext) {
         type: 'container',
         platformCapabilities: ['FARGATE'],
         containerProperties: {
-            image: dockerImage,
+            image: dockerImage.imageUri,
             resourceRequirements: [
                 {type: 'MEMORY', value: '2048'},  // value is in MiB
                 {type: 'VCPU', value: '1'}
@@ -354,7 +352,6 @@ export function Stack({stack}: StackContext) {
 
     stack.addOutputs({
         stack: stackUrl(stack.stackId, stack.region),
-        imageUri: dockerImageAsset.imageUri
     });
 
 }
