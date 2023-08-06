@@ -150,10 +150,14 @@ program
                 if (stack.version === latestVersion) {
                     stack.version = chalk.green(stack.version);
                 } else {
+
                     stack.version = chalk.red(stack.version) + " -> "
                         + chalk.green(latestVersion)
                         + " Update: "
-                        + chalk.yellow(`sfb deploy --region ${stack.region}${stageParam()}${profileParam()}`);
+                        + (getStageName() === 'stack'
+                            ? chalk.yellow(`sfb deploy --region ${stack.region}${stageParam()}${profileParam()}`)
+                            : chalk.yellow(`pnpm run dev --region ${stack.region}${stageParam()}${profileParam()}`))
+                    ;
                 }
             }
 
