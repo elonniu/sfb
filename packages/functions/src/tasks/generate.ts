@@ -54,7 +54,7 @@ async function createJobs(task: Task, region: string) {
     const batch = new AWS.Batch({region});
 
     const params: SubmitJobRequest = {
-        jobName: `${SST_APP}-${SST_STAGE}-${task.name}-${task.qps ? 'qps' : 'n'}-${task.taskId}`,
+        jobName: `${SST_APP}-${SST_STAGE}-${task.name}-${task.taskId}`,
         jobDefinition: JOB_DEFINITION || "",
         jobQueue: JOB_QUEUE || "",
         arrayProperties: {
@@ -116,7 +116,7 @@ async function createSf(task: Task, region: string) {
     for (let i = 0; i < task.c; i++) {
         const client = i + 1;
         sfExe.push({
-            name: `${task.qps ? 'qps' : 'n'}_${task.name}_${task.taskId}_${client}`,
+            name: `${task.taskId}_${client}`,
             stateMachineArn: requestStateMachineArn.replace(current_region, region),
             input: JSON.stringify({
                 Payload: {
