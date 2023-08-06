@@ -37,7 +37,7 @@
     "constructs": "10.1.156",
     "ora": "^6.3.1",
     "sst": "2.23.3",
-    "sst-helper": "0.0.90",
+    "sst-helper": "0.0.93",
     "strip-ansi": "^7.1.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6"

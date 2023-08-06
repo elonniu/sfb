@@ -8,6 +8,8 @@ import axios from 'axios';
 import stripAnsi from 'strip-ansi';
 import {spawn} from 'child_process';
 import {InvokeCommand, LambdaClient} from "@aws-sdk/client-lambda";
+import {fromIni} from "@aws-sdk/credential-provider-ini";
+import {GetCallerIdentityCommand, STSClient} from "@aws-sdk/client-sts";
 import {
     batchJobUrl,
     currentVersion,
@@ -30,14 +32,11 @@ program
     .command('deploy')
     .description('Deploy the app in a region')
     .action(async () => {
+        const region = await currentRegion();
         await update();
         const options = program.opts();
         const args = [];
-        if (!options.region) {
-            console.error('Error: the --region option is required');
-            process.exit(1);
-        }
-        options.region && args.push(`--region=${options.region}`);
+        args.push(`--region=${region}`);
         options.profile && args.push(`--profile=${options.profile}`);
         args.push(`--stage=prod`);
         const child = spawn('npm',
@@ -50,14 +49,11 @@ program
     .command('remove')
     .description('Remove the app from a region')
     .action(async (task) => {
+        const region = await currentRegion();
         await update();
         const options = program.opts();
         const args = [];
-        if (!options.region) {
-            console.error('Error: the --region option is required');
-            process.exit(1);
-        }
-        options.region && args.push(`--region=${options.region}`);
+        args.push(`--region=${region}`);
         options.profile && args.push(`--profile=${options.profile}`);
         args.push(`--stage=prod`);
         const child = spawn('npm',
@@ -70,6 +66,7 @@ program
     .command('ls [taskId]')
     .description('List a task or all tasks')
     .action(async (taskId, options) => {
+        await currentRegion();
         await update();
         if (taskId) {
             await getTask(taskId);
@@ -92,6 +89,7 @@ program
     .command('rm [taskId]')
     .description('Delete a task or all tasks')
     .action(async (taskId, options) => {
+        await currentRegion();
         await update();
         if (taskId) {
             await invoke('taskDeleteFunction', {taskId}, 'Task was deleted, it\'s states will be abort in a few seconds.');
@@ -104,6 +102,7 @@ program
     .command('abort <task-id>')
     .description('Abort a task')
     .action(async (taskId, options) => {
+        await currentRegion();
         await update();
         await invoke('taskAbortFunction', {taskId}, 'Task abort command was sent, It will take a few seconds to take effects.');
         console.log(chalk.green("You can get states by run: ") + chalk.yellow(`sfb ls ${taskId} ${stageParam()}`));
@@ -113,6 +112,7 @@ program
     .command('report <task-id>')
     .description('Show a task report data')
     .action(async (taskId, options) => {
+        await currentRegion();
         await update();
         console.log(chalk.blue("This feature is not implemented yet..."));
     });
@@ -121,11 +121,18 @@ program
     .command('regions')
     .description('List deployed regions')
     .action(async (options) => {
+        await currentRegion();
         await update();
         const stage = program.opts().stage ? program.opts().stage : 'prod';
         const spinner = ora('Processing...').start();
         const stackName = `sfb-${stage}`;
-        const stacks = await stackExistsAndCompleteInAllRegions(stackName);
+        let stacks;
+        try {
+            stacks = await stackExistsAndCompleteInAllRegions(stackName, await credentials());
+        } catch (e) {
+            spinner.fail(e.message);
+            process.exit(1);
+        }
         if (stacks.length === 0) {
             spinner.fail("No deployed regions");
             process.exit(1);
@@ -182,6 +189,7 @@ program
     .option('--end-time <string>', 'End time')
     .option('--regions <string>', 'Target regions, example: us-east-1,us-west-2')
     .action(async (task) => {
+        await currentRegion();
         await update();
         if (!task.qps && !task.n) {
             console.error('Error: the --qps or --n option is required');
@@ -200,10 +208,21 @@ if (!process.argv.slice(2).length) {
     program.help();
 }
 
+async function credentials() {
+    const credentials = fromIni({
+            profile: program.opts().profile ? program.opts().profile : 'default'
+        }
+    );
+
+    return {
+        region: program.opts().region,
+        credentials,
+    };
+}
+
 async function invoke(name, payload = undefined, tip = 'Completed!') {
 
-    const client = new LambdaClient({region: program.opts().region});
-
+    const client = new LambdaClient(await credentials());
     const spinner = ora('Processing...').start();
     const stage = program.opts().stage ? program.opts().stage : 'prod';
     const FunctionName = `sfb-${stage}-${name}`;
@@ -242,10 +261,13 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
 
         return result.data;
     } catch (e) {
+        const region = await client.config.region();
+
         if (e.message.indexOf('Function not found') !== -1) {
-            spinner.fail(chalk.red('Current region not deployed stack yet.'));
-            spinner.fail(`Your can run ${chalk.yellow('sfb deploy --region <region>')} to deploy the stack in current region before use.`);
-            spinner.fail('Or run ' + chalk.yellow('sfb regions') + ' to show all deployed regions and ' + `add ${chalk.yellow('--region <region>')} to specify the region for you command.`);
+            spinner.fail('Current region not deployed stack yet, you can:');
+            console.log(`    - add ${chalk.yellow('--region <region>')} to specify the region for you command.`);
+            console.log(`    - run ${chalk.yellow('sfb deploy')} to deploy the stack.`);
+            console.log('    - run ' + chalk.yellow('sfb regions') + ' to show all deployed regions.');
         } else {
             spinner.fail(e.message);
         }
@@ -253,6 +275,25 @@ async function invoke(name, payload = undefined, tip = 'Completed!') {
         process.exit(1);
     }
 
+}
+
+async function currentRegion() {
+    const spinner = ora('Initializing...').start();
+    try {
+        const config = await credentials();
+        const stsClient = new STSClient(config);
+        const region = await stsClient.config.region();
+
+        spinner.info(chalk.bold('Region:  ') + chalk.green(region));
+        const command = new GetCallerIdentityCommand({});
+        const response = await stsClient.send(command);
+        spinner.info(chalk.bold('Account: ') + chalk.green(response.Arn));
+
+        return region;
+    } catch (e) {
+        spinner.fail(e.message);
+        process.exit(1);
+    }
 }
 
 function table(data, columnOrder = []) {

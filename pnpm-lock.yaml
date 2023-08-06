@@ -39,8 +39,8 @@ importers:
         specifier: 2.23.3
         version: 2.23.3
       sst-helper:
-        specifier: 0.0.90
-        version: 0.0.90(constructs@10.1.156)
+        specifier: 0.0.93
+        version: 0.0.93(constructs@10.1.156)
       strip-ansi:
         specifier: ^7.1.0
         version: 7.1.0
@@ -63,6 +63,12 @@ importers:
       '@aws-sdk/client-ec2':
         specifier: ^3.370.0
         version: 3.370.0
+      '@aws-sdk/client-sts':
+        specifier: ^3.385.0
+        version: 3.385.0
+      '@aws-sdk/credential-provider-ini':
+        specifier: ^3.385.0
+        version: 3.385.0
       aws-sdk:
         specifier: ^2.1408.0
         version: 2.1408.0
@@ -213,7 +219,7 @@ packages:
       '@aws-crypto/sha256-js': 3.0.0
       '@aws-crypto/supports-web-crypto': 3.0.0
       '@aws-crypto/util': 3.0.0
-      '@aws-sdk/types': 3.370.0
+      '@aws-sdk/types': 3.378.0
       '@aws-sdk/util-locate-window': 3.310.0
       '@aws-sdk/util-utf8-browser': 3.259.0
       tslib: 1.14.1
@@ -222,7 +228,7 @@ packages:
     resolution: {integrity: sha512-PnNN7os0+yd1XvXAy23CFOmTbMaDxgxXtTKHybrJ39Y8kGzBATgBFibWJKH6BhytLI/Zyszs87xCOBNyBig6vQ==}
     dependencies:
       '@aws-crypto/util': 3.0.0
-      '@aws-sdk/types': 3.370.0
+      '@aws-sdk/types': 3.378.0
       tslib: 1.14.1
 
   /@aws-crypto/supports-web-crypto@3.0.0:
@@ -5601,8 +5607,8 @@ packages:
     optionalDependencies:
       fsevents: 2.3.2
 
-  /sst-helper@0.0.90(constructs@10.1.156):
-    resolution: {integrity: sha512-q9troR0yDsDSUbtbRRk/ScKvVRo4C9Gsx6fBLSOvyK1Z0bkgY7F6Ao/xJvrDMEaM0XuqIHEhj5Bi7ntfEMt0tw==}
+  /sst-helper@0.0.93(constructs@10.1.156):
+    resolution: {integrity: sha512-zKE0X2DPI3FWZZ2StDHAFM0Hfm4RuALvBIWbM4detEmrzHgpKVCg2wgOspVcmxs2FOq5ifi/68rYWlPyt+SIwQ==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
     dependencies:
       '@aws-sdk/client-dynamodb': 3.370.0
@@ -5642,7 +5648,7 @@ packages:
       '@aws-sdk/client-rds-data': 3.370.0
       '@aws-sdk/client-s3': 3.370.0(@aws-sdk/signature-v4-crt@3.370.0)
       '@aws-sdk/client-ssm': 3.370.0
-      '@aws-sdk/client-sts': 3.370.0
+      '@aws-sdk/client-sts': 3.385.0
       '@aws-sdk/config-resolver': 3.370.0
       '@aws-sdk/credential-providers': 3.370.0
       '@aws-sdk/middleware-retry': 3.370.0

@@ -18,14 +18,12 @@ This is a tool for bench testing by AWS Serverless.
 
 ```bash
 npm i -g sfb
-
 ```
 
 ### 2.3 Show Help Options
 
 ```bash
 sfb help
-
 ```
 
 ## 3. Stack
@@ -37,21 +35,27 @@ Before using CLI, you need to first deploy the base stack in your chosen region.
 ### 3.1 Deploy
 
 ```bash
+# deploy a new stack
+sfb deploy
+
+# deploy a new stack in specify region
 sfb deploy --region <your-region>
 ```
 
 ### 3.1 Remove
 
 ```bash
+# remove the stack
+sfb remove
+
+# remove the stack in specify region
 sfb remove --region <your-region>
 ```
 
 ### 3.2 List Deployed Regions
 
 ```bash
-# list all deployed regions
 sfb regions
-
 ```
 
 ## 4. Tasks
