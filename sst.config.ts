@@ -7,6 +7,9 @@ export default {
         return {
             name: "sfb",
             region: "ap-southeast-1",
+            bootstrap: {
+                useCdkBucket: true
+            }
         };
     },
     stacks(app) {
