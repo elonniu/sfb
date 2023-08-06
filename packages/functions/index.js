@@ -32,8 +32,8 @@ program
     .command('deploy')
     .description('Deploy the app in a region')
     .action(async () => {
+        await versionCheck();
         const region = await currentRegion();
-        await update();
         const options = program.opts();
         const args = [];
         args.push(`--region=${region}`);
@@ -49,8 +49,8 @@ program
     .command('remove')
     .description('Remove the app from a region')
     .action(async (task) => {
+        await versionCheck();
         const region = await currentRegion();
-        await update();
         const options = program.opts();
         const args = [];
         args.push(`--region=${region}`);
@@ -66,8 +66,8 @@ program
     .command('ls [taskId]')
     .description('List a task or all tasks')
     .action(async (taskId, options) => {
+        await versionCheck();
         await currentRegion();
-        await update();
         if (taskId) {
             await getTask(taskId);
         } else {
@@ -79,8 +79,8 @@ program
     .command('rm [taskId]')
     .description('Delete a task or all tasks')
     .action(async (taskId, options) => {
+        await versionCheck();
         await currentRegion();
-        await update();
         if (taskId) {
             await invoke('taskDeleteFunction', {taskId}, 'Task was deleted, it\'s states will be abort in a few seconds.');
         } else {
@@ -92,8 +92,8 @@ program
     .command('abort <task-id>')
     .description('Abort a task')
     .action(async (taskId, options) => {
+        await versionCheck();
         await currentRegion();
-        await update();
         await invoke('taskAbortFunction', {taskId}, 'Task abort command was sent, It will take a few seconds to take effects.');
         console.log(chalk.green("You can get states by run: ") + chalk.yellow(`sfb ls ${taskId}${regionParam()}${stageParam()}${profileParam()}`));
     });
@@ -102,8 +102,8 @@ program
     .command('report <task-id>')
     .description('Show a task report data')
     .action(async (taskId, options) => {
+        await versionCheck();
         await currentRegion();
-        await update();
         console.log(chalk.blue("This feature is not implemented yet..."));
     });
 
@@ -111,8 +111,8 @@ program
     .command('regions')
     .description('List deployed regions')
     .action(async (options) => {
+        await versionCheck();
         await currentRegion();
-        await update();
         const spinner = ora('Processing...').start();
         const stackName = `sfb-${getStageName()}`;
         let stacks;
@@ -178,8 +178,8 @@ program
     .option('--end-time <string>', 'End time')
     .option('--regions <string>', 'Target regions, example: us-east-1,us-west-2')
     .action(async (task) => {
+        await versionCheck();
         await currentRegion();
-        await update();
         if (!task.qps && !task.n) {
             console.error('Error: the --qps or --n option is required');
             process.exit(1);
@@ -328,7 +328,7 @@ function taskList(data) {
     table(data, ["taskId", "name", "type", "region", "status", "startTime", "endTime", "createdAt"]);
 }
 
-async function update() {
+async function versionCheck() {
     const spinner = ora('Waiting...').start();
     try {
         const response = await axios.get('https://registry.npmjs.org/sfb');
