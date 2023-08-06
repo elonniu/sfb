@@ -346,7 +346,7 @@ async function versionCheck() {
 }
 
 function show(data) {
-    const colWidths = [20, 50, 20, 50];
+    const colWidths = [15, 55, 15, 55];
 
     const table = new Table({
         head: [chalk.yellow('Key1'), chalk.green('Value1'), chalk.yellow('Key2'), chalk.green('Value2')],
