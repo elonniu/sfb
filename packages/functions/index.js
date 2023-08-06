@@ -104,7 +104,7 @@ program
     .action(async (taskId, options) => {
         await versionCheck();
         await currentRegion();
-        console.log(chalk.blue("This feature is not implemented yet..."));
+        console.log(chalk.yellow("This feature is not implemented yet..."));
     });
 
 program
