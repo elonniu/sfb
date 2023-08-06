@@ -137,7 +137,7 @@ program
             spinner.fail("No deployed regions");
             process.exit(1);
         }
-        spinner.succeed("Only show completed stacks:");
+        spinner.succeed("Stacks:");
         const latestVersion = await currentVersion('sfb');
         for (const stack of stacks) {
             stack.version = 'none';
@@ -146,6 +146,7 @@ program
                     stack.version = tag.Value;
                 }
             }
+
             if (stack.version) {
                 if (stack.version === latestVersion) {
                     stack.version = chalk.green(stack.version);
@@ -156,8 +157,13 @@ program
                         + chalk.yellow(`sfb deploy --region ${stack.region}${stageParam()}${profileParam()}`);
                 }
             }
+
+            stack.StackStatus = stack.StackStatus.indexOf("COMPLETE") !== -1
+                ? chalk.green(stack.StackStatus)
+                : chalk.yellow(stack.StackStatus);
         }
-        table(stacks, ["region", "StackName", "version"]);
+
+        table(stacks, ["region", "StackName", "StackStatus", "version"]);
     });
 
 program
