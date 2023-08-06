@@ -1,7 +1,7 @@
 {
   "name": "sfb",
   "description": "Serverless Force Bench",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "module",
   "license": "Apache-2.0",
   "bin": {
@@ -27,7 +27,6 @@
     "packages/*"
   ],
   "dependencies": {
-    "@aws-cdk/aws-elasticsearch": "^1.204.0",
     "@aws-sdk/client-lambda": "^3.370.0",
     "aws-cdk-lib": "2.84.0",
     "aws-sdk": "^2.1408.0",
@@ -37,7 +36,7 @@
     "commander": "^11.0.0",
     "constructs": "10.1.156",
     "ora": "^6.3.1",
-    "sst": "2.21.8",
+    "sst": "2.23.3",
     "sst-helper": "0.0.89",
     "strip-ansi": "^7.1.0",
     "ts-node": "^10.9.1",
