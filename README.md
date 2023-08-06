@@ -1,12 +1,12 @@
 # Serverless Force Bench
 
-## 1. What is this?
+SFB(Serverless Force Bench) is a tool for bench testing on AWS Serverless.
 
-This is a tool for bench testing by AWS Serverless.
+![sfb.svg](sfb.svg)
 
-## 2. How to use it?
+## 1. How to use it?
 
-### 2.1 Requirements
+### 1.1 Requirements
 
 - `node -v` >= v16.16.0
 - `npm -v` >= 9.6.6
@@ -14,25 +14,25 @@ This is a tool for bench testing by AWS Serverless.
 - `go version` >= go1.20.5
 - [Setting AWS Credentials](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html)
 
-### 2.2 Install the CLI
+### 1.2 Install the CLI
 
 ```bash
 npm i -g sfb
 ```
 
-### 2.3 Show Help Options
+### 1.3 Show Help Options
 
 ```bash
 sfb help
 ```
 
-## 3. Stack
+## 2. Stack
 
 Before using CLI, you need to first deploy the base stack in your chosen region.
 
 > **Permissions**: Managing stacks usually requires administrator permissions.
 
-### 3.1 Deploy
+### 2.1 Deploy
 
 ```bash
 # deploy a new stack
@@ -42,7 +42,7 @@ sfb deploy
 sfb deploy --region <your-region>
 ```
 
-### 3.1 Remove
+### 2.2 Remove
 
 ```bash
 # remove the stack
@@ -52,20 +52,20 @@ sfb remove
 sfb remove --region <your-region>
 ```
 
-### 3.2 List Deployed Regions
+### 2.3 List Deployed Regions
 
 ```bash
 sfb regions
 ```
 
-## 4. Tasks
+## 3. Tasks
 
 > **Permissions**: Using the CLI usually requires ordinary permissions:
 > - lambda:invokeFunction
 > - ec2:describeRegions
 > - cloudformation:describeStacks
 
-### 4.1 Create Task
+### 3.1 Create Task
 
 ```bash
 # show how create a new task
@@ -79,7 +79,7 @@ sfb create --n 1 --name test --delay 10 --type API --url https://api.com --regio
 
 ```
 
-### 4.2 List Tasks
+### 3.2 List Tasks
 
 ```bash
 # list all tasks
@@ -90,7 +90,7 @@ sfb ls [taskId]
 
 ```
 
-### 4.3 Remove Tasks
+### 3.3 Remove Tasks
 
 ```bash
 # remove all tasks
@@ -101,45 +101,18 @@ sfb rm [taskId]
 
 ```
 
-### 4.4 Abort Task
+### 3.4 Abort Task
 
 ```bash
 # abort a specific task
 sfb abort <taskId>
 ```
 
-## 5. What are the benefits of using Serverless?
-
-- Pay as you go: only pay for the time your code is running
-- No server management: no need to worry about the infrastructure
-- No idle time: no need to worry about the idle time
-- Easy to develop/deploy/test/debug
-- Easy to scale, Auto scaling: scale up and scale down
-- Easy to integrate with other services: API Gateway, S3, SQS, SNS, DynamoDB, etc.
-- Native support for many invoke methods: Sync, Async, Http, Event, Stream, CLI, SDK, etc.
-- Native support for many languages: Node.js, Python, Java, C#, Go, etc.
-- Native support for DLQ: Dead Letter Queue
-- Native support for logging/monitoring: CloudWatch
-- Native support for tracing: X-Ray
-- Native support for security: IAM, KMS, VPC, etc.
-- Native support for versioning: version control
-- Native support for ESM settings: batch size, retry, etc.
-
-# 6. How to compute the cost?
+# 4. How to compute the cost?
 
 - https://aws.amazon.com/lambda/pricing/
 - https://aws.amazon.com/step-functions/pricing/
 - https://aws.amazon.com/sns/pricing/
 - https://aws.amazon.com/ecs/pricing/
 - https://aws.amazon.com/batch/pricing/
-
-# 7. How to get cost-effective / high performance?
-
-- Optimize the bootstrap time for cold start
-- Use the right memory size
-- Use the right timeout
-- Use the right provisioned concurrency
-- Use the right service/trigger settings
-- Use the right language
-- Use the right library
-- Use the right region/latency
+- https://aws.amazon.com/kinesis/data-streams/pricing/
