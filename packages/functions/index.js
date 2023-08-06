@@ -38,7 +38,7 @@ program
         const args = [];
         args.push(`--region=${region}`);
         options.profile && args.push(`--profile=${options.profile}`);
-        args.push(`--stage=prod`);
+        args.push(`--stage=${getStageName()}`);
         const child = spawn('npm',
             ['run', 'deploy', '--', ...args],
             {stdio: 'inherit', cwd: getRoot('sfb')}
@@ -55,7 +55,7 @@ program
         const args = [];
         args.push(`--region=${region}`);
         options.profile && args.push(`--profile=${options.profile}`);
-        args.push(`--stage=prod`);
+        args.push(`--stage=${getStageName()}`);
         const child = spawn('npm',
             ['run', 'remove', '--', ...args],
             {stdio: 'inherit', cwd: getRoot('sfb')}
@@ -123,9 +123,8 @@ program
     .action(async (options) => {
         await currentRegion();
         await update();
-        const stage = program.opts().stage ? program.opts().stage : 'prod';
         const spinner = ora('Processing...').start();
-        const stackName = `sfb-${stage}`;
+        const stackName = `sfb-${getStageName()}`;
         let stacks;
         try {
             stacks = await stackExistsAndCompleteInAllRegions(stackName, await credentials());
@@ -216,12 +215,15 @@ async function credentials() {
     };
 }
 
+function getStageName() {
+    return program.opts().stage ? program.opts().stage : 'stack';
+}
+
 async function invoke(name, payload = undefined, tip = 'Completed!') {
 
     const client = new LambdaClient(await credentials());
     const spinner = ora('Processing...').start();
-    const stage = program.opts().stage ? program.opts().stage : 'prod';
-    const FunctionName = `sfb-${stage}-${name}`;
+    const FunctionName = `sfb-${getStageName()}-${name}`;
 
     const params = {
         FunctionName,
