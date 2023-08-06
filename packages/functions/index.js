@@ -294,7 +294,13 @@ async function currentRegion() {
 
         return region;
     } catch (e) {
-        spinner.fail(e.message);
+
+        if (e.message.indexOf('The security token included in the request is invalid') !== -1) {
+            spinner.warn(e.message + " region belong current profile?");
+        } else {
+            spinner.fail(e.message);
+        }
+
         process.exit(1);
     }
 }
