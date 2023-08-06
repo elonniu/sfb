@@ -127,6 +127,16 @@ program
             spinner.fail("No deployed regions");
             process.exit(1);
         }
+        // sort by region
+        stacks.sort((a, b) => {
+            if (a.region < b.region) {
+                return -1;
+            }
+            if (a.region > b.region) {
+                return 1;
+            }
+            return 0;
+        });
         spinner.stop();
         const latestVersion = await currentVersion('sfb');
         for (const stack of stacks) {
