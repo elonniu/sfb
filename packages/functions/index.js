@@ -143,7 +143,7 @@ program
 
                     stack.version = chalk.red(stack.version) + " -> "
                         + chalk.green(latestVersion)
-                        + " Update: "
+                        + " CMD: "
                         + (getStageName() === 'stack'
                             ? chalk.yellow(`sfb deploy --region ${stack.region}${stageParam()}${profileParam()}`)
                             : chalk.yellow(`pnpm run dev --region ${stack.region}${stageParam()}${profileParam()}`))
