@@ -10,12 +10,17 @@ import {Cluster, Compatibility, ContainerImage, LogDrivers, NetworkMode, TaskDef
 import * as fs from "fs";
 import {Duration} from "aws-cdk-lib";
 import {StreamMode} from "aws-cdk-lib/aws-kinesis";
+import * as assets from 'aws-cdk-lib/aws-ecr-assets';
 
 const dockerImage = 'public.ecr.aws/elonniu/sfb:latest';
 
 export function Stack({stack}: StackContext) {
 
     const version = JSON.parse(fs.readFileSync("./package.json", 'utf-8')).version;
+
+    const dockerImageAsset = new assets.DockerImageAsset(stack, 'DockerImageAsset', {
+        directory: './resources/golang',
+    });
 
     const vpc = new Vpc(stack, "vpc", {
         maxAzs: 2,
@@ -349,6 +354,7 @@ export function Stack({stack}: StackContext) {
 
     stack.addOutputs({
         stack: stackUrl(stack.stackId, stack.region),
+        imageUri: dockerImageAsset.imageUri
     });
 
 }

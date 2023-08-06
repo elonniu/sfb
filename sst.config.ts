@@ -6,6 +6,7 @@ export default {
     config(_input) {
         return {
             name: "sfb",
+            region: "ap-southeast-1",
         };
     },
     stacks(app) {
