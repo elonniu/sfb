@@ -138,36 +138,26 @@ program
             process.exit(1);
         }
         spinner.succeed("Only show completed stacks:");
+        const latestVersion = await currentVersion('sfb');
         for (const stack of stacks) {
             stack.version = 'none';
-            stack.needUpdate = true;
             for (const tag of stack.Tags) {
                 if (tag.Key === 'version') {
                     stack.version = tag.Value;
                 }
             }
             if (stack.version) {
-                if (stack.version === await currentVersion('sfb')) {
+                if (stack.version === latestVersion) {
                     stack.version = chalk.green(stack.version);
-                    stack.needUpdate = false;
                 } else {
-                    stack.version = chalk.red(stack.version);
+                    stack.version = chalk.red(stack.version) + " -> "
+                        + chalk.green(latestVersion)
+                        + " Update: "
+                        + chalk.yellow(`sfb deploy --region ${stack.region}${stageParam()}${profileParam()}`);
                 }
             }
         }
-        table(stacks, ["region", "version", "url"]);
-        for (const stack of stacks) {
-            if (stack.needUpdate) {
-                console.log(
-                    "Need update version "
-                    + chalk.red(stack.version)
-                    + " -> "
-                    + chalk.green(await currentVersion('sfb'))
-                    + " Command: "
-                    + chalk.yellow(`sfb deploy --region ${stack.region}${stageParam()}${profileParam()}`)
-                );
-            }
-        }
+        table(stacks, ["region", "StackName", "version"]);
     });
 
 program
