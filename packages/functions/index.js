@@ -136,7 +136,7 @@ program
             spinner.fail("No deployed regions");
             process.exit(1);
         }
-        spinner.succeed("Stacks:");
+        spinner.stop();
         const latestVersion = await currentVersion('sfb');
         for (const stack of stacks) {
             stack.version = 'none';
