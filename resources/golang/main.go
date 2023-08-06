@@ -159,7 +159,7 @@ func FetchAndMeasure(task Task) {
 }
 
 func ua(task Task) string {
-	return "SFB/" + task.Version + "/" + task.Region + " (" + task.Compute + ") TaskId=" + task.TaskId + " EnvInitDuration=" + strconv.FormatInt(task.EnvInitDuration, 10) + "ms" + " Latency=" + strconv.FormatInt(task.Latency, 10) + "ms"
+	return "SFB/" + task.Version + "/" + task.Region + " (" + task.Compute + ") TaskId=" + task.TaskId + " EnvInitDurationMs=" + strconv.FormatInt(task.EnvInitDuration, 10) + " LatencyMs=" + strconv.FormatInt(task.Latency, 10)
 }
 
 func FetchAndMeasureApi(task Task) {
