@@ -105,7 +105,7 @@ program
         await currentRegion();
         await update();
         await invoke('taskAbortFunction', {taskId}, 'Task abort command was sent, It will take a few seconds to take effects.');
-        console.log(chalk.green("You can get states by run: ") + chalk.yellow(`sfb ls ${taskId} ${stageParam()}`));
+        console.log(chalk.green("You can get states by run: ") + chalk.yellow(`sfb ls ${taskId}${regionParam()}${stageParam()}${profileParam()}`));
     });
 
 program
@@ -164,7 +164,7 @@ program
                     + " -> "
                     + chalk.green(await currentVersion('sfb'))
                     + " Command: "
-                    + chalk.yellow(`sfb deploy --region ${stack.region} ${stageParam()}`)
+                    + chalk.yellow(`sfb deploy --region ${stack.region}${stageParam()}${profileParam()}`)
                 );
             }
         }
@@ -393,10 +393,18 @@ function showTask(res) {
     table(list, ["status", "jobUrl"]);
     console.log(
         "Refresh Task Status: "
-        + chalk.yellow(`sfb ls ${res.taskId} ${stageParam()}`)
+        + chalk.yellow(`sfb ls ${res.taskId}${regionParam()}${stageParam()}${profileParam()}`)
     );
 }
 
+function regionParam() {
+    return program.opts().region ? ` --region ${program.opts().region}` : ""
+}
+
 function stageParam() {
-    return program.opts().stage ? `--stage ${program.opts().stage}` : ""
+    return program.opts().stage ? ` --stage ${program.opts().stage}` : ""
+}
+
+function profileParam() {
+    return program.opts().profile ? ` --profile ${program.opts().profile}` : ""
 }
