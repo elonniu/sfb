@@ -72,10 +72,10 @@ sfb regions
 sfb create --help
 
 # create a new task in current region
-sfb create --n 1 --name test --delay 10 --type API --url https://api.com
+sfb create --name test --type API --n 10 --c 2 --compute Lambda --url https://api.com
 
 # create a new task in specific region(s)
-sfb create --n 1 --name test --delay 10 --type API --url https://api.com --regions ap-southeast-1,us-east-2
+sfb create --name test --type API --n 10 --c 2 --compute Fargate --delay 30 --url https://api.com --regions ap-southeast-1,us-east-2
 
 ```
 
