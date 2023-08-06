@@ -199,8 +199,8 @@ if (!process.argv.slice(2).length) {
 }
 
 async function getTask(taskId) {
-    const res = await invoke('taskGetFunction', {taskId}, 'Task Overview:');
-    showTask(res);
+    const task = await invoke('taskGetFunction', {taskId}, 'Task Overview:');
+    showTask(task);
 }
 
 async function getTasks() {
@@ -354,7 +354,11 @@ function show(data) {
     });
 
     data.forEach(item => {
-        const entries = Object.entries(item);
+        const current = JSON.parse(JSON.stringify(item));
+        delete current.states;
+        delete current.region;
+        current.regions = current.regions.join(',');
+        const entries = Object.entries(current);
         for (let i = 0; i < entries.length; i += 2) {
             const row = [
                 chalk.yellow(entries[i][0]),
@@ -387,13 +391,16 @@ function stateUrl(item, compute) {
 
 function showTask(res) {
     show([res]);
+
     console.log("Task Jobs:");
+
     const list = Object.entries(res.states).flatMap(([region, data]) =>
         Object.entries(data).map(([arn, status]) => ({region, arn, status}))
     );
     list.forEach(item => {
         item.jobUrl = stateUrl(item, res.compute);
     });
+
     table(list, ["status", "jobUrl"]);
     console.log(
         "Refresh Task Status: "
