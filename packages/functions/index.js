@@ -75,16 +75,6 @@ program
         }
     });
 
-async function getTask(taskId) {
-    const res = await invoke('taskGetFunction', {taskId}, 'Task Overview:');
-    showTask(res);
-}
-
-async function getTasks() {
-    const res = await invoke('taskListFunction');
-    taskList(res.Items);
-}
-
 program
     .command('rm [taskId]')
     .description('Delete a task or all tasks')
@@ -207,6 +197,16 @@ if (!process.argv.slice(2).length) {
     program.help();
 }
 
+async function getTask(taskId) {
+    const res = await invoke('taskGetFunction', {taskId}, 'Task Overview:');
+    showTask(res);
+}
+
+async function getTasks() {
+    const res = await invoke('taskListFunction');
+    taskList(res.Items);
+}
+
 async function credentials() {
     const credentials = fromIni({
             profile: program.opts().profile ? program.opts().profile : 'default'
@@ -290,6 +290,7 @@ async function currentRegion() {
         const command = new GetCallerIdentityCommand({});
         const response = await stsClient.send(command);
         spinner.info(chalk.bold('Account: ') + chalk.green(response.Arn));
+        console.log("\n");
 
         return region;
     } catch (e) {
@@ -334,7 +335,8 @@ async function update() {
         const serverVersion = response.data['dist-tags'].latest;
         if (serverVersion !== program.version()) {
             spinner.stop();
-            console.log(chalk.yellow(`A new version ${chalk.green(serverVersion)} is available. Your version is ${chalk.red(program.version())}, Please update by run: ${chalk.blue('npm i -g sfb')}`));
+            console.log(chalk.yellow(`Version ${chalk.bold(chalk.green(serverVersion))} is available. Your version is ${chalk.bold(chalk.red(program.version()))}`));
+            console.log(chalk.yellow(`Please update by run: ${chalk.bold(chalk.green('npm i -g sfb'))}\n`));
             process.exit(1);
         }
     } catch (error) {
