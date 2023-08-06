@@ -289,8 +289,7 @@ async function currentRegion() {
         spinner.info(chalk.bold('Region:  ') + chalk.green(region));
         const command = new GetCallerIdentityCommand({});
         const response = await stsClient.send(command);
-        spinner.info(chalk.bold('Account: ') + chalk.green(response.Arn));
-        console.log("\n");
+        spinner.info(chalk.bold('Account: ') + chalk.green(response.Arn) + '\n');
 
         return region;
     } catch (e) {
