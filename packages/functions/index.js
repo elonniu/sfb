@@ -21,6 +21,7 @@ import {
 } from "sst-helper";
 
 const program = new Command();
+const prodStageName = 'stack'
 
 program
     .version(await currentVersion('sfb'))
@@ -144,7 +145,7 @@ program
                     stack.version = chalk.red(stack.version) + " -> "
                         + chalk.green(latestVersion)
                         + " CMD: "
-                        + (getStageName() === 'stack'
+                        + (getStageName() === prodStageName
                             ? chalk.yellow(`sfb deploy --region ${stack.region}${stageParam()}${profileParam()}`)
                             : chalk.yellow(`pnpm run dev --region ${stack.region}${stageParam()}${profileParam()}`))
                     ;
@@ -220,7 +221,7 @@ async function credentials() {
 }
 
 function getStageName() {
-    return program.opts().stage ? program.opts().stage : 'stack';
+    return program.opts().stage ? program.opts().stage : prodStageName;
 }
 
 async function invoke(name, payload = undefined, tip = 'Completed!') {
