@@ -198,7 +198,7 @@ program
         if (task.regions) {
             task.regions = task.regions.split(',');
         }
-        const res = await invoke('CreateTask', task, 'Task created!');
+        const res = await invoke('taskCreateFunction', task, 'Task created!');
         await getTask(res.taskId);
     });
 

@@ -25,7 +25,7 @@ export function Stack({stack}: StackContext) {
         natGateways: 1,
         subnetConfiguration: [
             {
-                name: "bench-public",
+                name: "sfb-public",
                 subnetType: SubnetType.PUBLIC,
             },
         ]
@@ -53,7 +53,7 @@ export function Stack({stack}: StackContext) {
     });
 
     const ecsTaskDefinition = new TaskDefinition(stack, "taskDefinition", {
-        family: `${stack.stackName}-ecsTaskDefinition`,
+        family: `${stack.stackName}-taskDefinition`,
         networkMode: NetworkMode.AWS_VPC,
         taskRole: ecsTaskExecutionRole,
         executionRole: ecsTaskExecutionRole,
@@ -104,14 +104,14 @@ export function Stack({stack}: StackContext) {
         containerProperties: {
             image: dockerImage.imageUri,
             resourceRequirements: [
-                {type: 'MEMORY', value: '2048'},  // value is in MiB
+                {type: 'MEMORY', value: '2048'},
                 {type: 'VCPU', value: '1'}
             ],
             executionRoleArn: ecsTaskExecutionRole.roleArn,
             networkConfiguration: {
                 assignPublicIp: 'ENABLED',
             },
-            logConfiguration: { // Set log configuration
+            logConfiguration: {
                 logDriver: 'awslogs',
                 options: {
                     'awslogs-group': '/aws/batch/job',
@@ -226,7 +226,7 @@ export function Stack({stack}: StackContext) {
     }) as any);
 
     new Function(stack, "taskCreateFunction", {
-        functionName: `${stack.stackName}-CreateTask`,
+        functionName: `${stack.stackName}-taskCreateFunction`,
         handler: "packages/functions/src/tasks/create.handler",
         permissions: [
             'ec2:describeRegions',
