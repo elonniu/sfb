@@ -162,7 +162,7 @@ program
                 }
             }
 
-            stack.StackStatus = stack.StackStatus.indexOf("COMPLETE") !== -1
+            stack.StackStatus = stackComplete(stack)
                 ? chalk.green(stack.StackStatus)
                 : chalk.yellow(stack.StackStatus);
         }
@@ -434,4 +434,14 @@ function stageParam() {
 
 function profileParam() {
     return program.opts().profile ? ` --profile ${program.opts().profile}` : ""
+}
+
+function stackComplete(stack) {
+    const stackStatus = stack.StackStatus;
+
+    if (stackStatus.indexOf("UPDATE_COMPLETE") !== -1) {
+        return true;
+    }
+
+    return stackStatus.indexOf("CREATE_COMPLETE") !== -1;
 }
