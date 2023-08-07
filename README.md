@@ -31,13 +31,13 @@ Before using CLI, you need to first deploy the base stack in your chosen region.
 
 > **Permissions**: Managing stacks usually requires administrator permissions.
 
-### 2.1 Deploy
+### 2.1 Deploy/Update
 
 ```bash
-# deploy a new stack
+# deploy a new stack or update stack
 sfb deploy
 
-# deploy a new stack in specify region
+# deploy a new stack or update stack in specify region
 sfb deploy --region <your-region>
 ```
 
