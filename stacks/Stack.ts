@@ -8,7 +8,7 @@ import {SecurityGroup, SubnetType, Vpc} from "aws-cdk-lib/aws-ec2";
 import * as batch from "aws-cdk-lib/aws-batch";
 import {Cluster, Compatibility, ContainerImage, LogDrivers, NetworkMode, TaskDefinition} from "aws-cdk-lib/aws-ecs";
 import * as fs from "fs";
-import {Duration} from "aws-cdk-lib";
+import {Duration, Tags} from "aws-cdk-lib";
 import {StreamMode} from "aws-cdk-lib/aws-kinesis";
 import {DockerImageAsset} from 'aws-cdk-lib/aws-ecr-assets';
 
@@ -16,7 +16,7 @@ export function Stack({stack}: StackContext) {
 
     const version = JSON.parse(fs.readFileSync("./package.json", 'utf-8')).version;
 
-    stack.tags.setTag("version", version);
+    Tags.of(stack).add('version', version);
 
     const dockerImage = new DockerImageAsset(stack, 'dockerImage', {
         directory: './resources/golang',
