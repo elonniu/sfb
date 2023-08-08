@@ -10,13 +10,15 @@ import {Cluster, Compatibility, ContainerImage, LogDrivers, NetworkMode, TaskDef
 import * as fs from "fs";
 import {Duration} from "aws-cdk-lib";
 import {StreamMode} from "aws-cdk-lib/aws-kinesis";
-import * as assets from 'aws-cdk-lib/aws-ecr-assets';
+import {DockerImageAsset} from 'aws-cdk-lib/aws-ecr-assets';
 
 export function Stack({stack}: StackContext) {
 
     const version = JSON.parse(fs.readFileSync("./package.json", 'utf-8')).version;
 
-    const dockerImage = new assets.DockerImageAsset(stack, 'dockerImage', {
+    stack.tags.setTag("version", version);
+
+    const dockerImage = new DockerImageAsset(stack, 'dockerImage', {
         directory: './resources/golang',
     });
 
@@ -76,16 +78,19 @@ export function Stack({stack}: StackContext) {
         resources: ['*'],
     }));
 
-    const batchComputeEnvironment = new batch.CfnComputeEnvironment(stack, 'computeEnvironment', {
-        computeEnvironmentName: stack.stackName,
-        type: 'MANAGED',
-        computeResources: {
-            type: 'FARGATE',
-            maxvCpus: 2,
-            securityGroupIds: [securityGroup.securityGroupId],
-            subnets: vpcSubnets,
-        },
-    });
+    const batchComputeEnvironment = new batch.CfnComputeEnvironment(
+        stack,
+        'computeEnvironment',
+        {
+            computeEnvironmentName: stack.stackName,
+            type: 'MANAGED',
+            computeResources: {
+                type: 'FARGATE',
+                maxvCpus: 2,
+                securityGroupIds: [securityGroup.securityGroupId],
+                subnets: vpcSubnets,
+            },
+        });
 
     const jobQueue = new batch.CfnJobQueue(stack, 'jobQueue', {
         jobQueueName: `${stack.stackName}-jobQueue`,
@@ -145,9 +150,9 @@ export function Stack({stack}: StackContext) {
     const executionFunction = new Function(stack, "executionFunction", {
         functionName: `${stack.stackName}-executionFunction`,
         handler: "packages/functions/src/sf/execution.handler",
+        bind: [topic],
         memorySize: 4048,
         permissions: ['states:DescribeExecution', 'cloudwatch:PutMetricData', 'lambda:InvokeFunction'],
-        bind: [topic],
         environment: {
             taskFunction: taskFunction.functionName
         }
@@ -176,9 +181,9 @@ export function Stack({stack}: StackContext) {
     new Function(stack, "taskGetFunction", {
         functionName: `${stack.stackName}-taskGetFunction`,
         handler: "packages/functions/src/tasks/get.handler",
+        bind: [taskTable],
         permissions: ['dynamodb:GetItem'],
         memorySize: 2048,
-        bind: [taskTable],
     });
 
     const kds = new KinesisStream(stack, "stream", {
@@ -194,6 +199,7 @@ export function Stack({stack}: StackContext) {
     const taskGenerateFunction = new Function(stack, "taskGenerateFunction", {
         functionName: `${stack.stackName}-taskGenerateFunction`,
         handler: "packages/functions/src/tasks/generate.handler",
+        bind: [taskTable],
         permissions: [
             'ecs:RunTask',
             'iam:PassRole',
@@ -201,7 +207,6 @@ export function Stack({stack}: StackContext) {
             'dynamodb:PutItem',
         ],
         memorySize: 2048,
-        bind: [taskTable],
         environment: {
             VPC_SUBNETS: JSON.stringify(vpcSubnets),
             SECURITY_GROUP_ID: securityGroup.securityGroupId,
@@ -218,20 +223,20 @@ export function Stack({stack}: StackContext) {
     taskGenerateFunction.addToRolePolicy(new PolicyStatement({
         actions: ['batch:SubmitJob'],
         resources: ['*'],
-    }) as any);
+    }));
 
     taskFunction.addToRolePolicy(new PolicyStatement({
         actions: ['kinesis:PutRecord'],
         resources: ['*'],
-    }) as any);
+    }));
 
     new Function(stack, "taskCreateFunction", {
         functionName: `${stack.stackName}-taskCreateFunction`,
         handler: "packages/functions/src/tasks/create.handler",
         permissions: [
             'ec2:describeRegions',
+            'lambda:InvokeFunction',
             'cloudformation:DescribeStacks',
-            'lambda:InvokeFunction'
         ],
         memorySize: 2048,
         environment: {
@@ -243,17 +248,26 @@ export function Stack({stack}: StackContext) {
     new Function(stack, "taskListFunction", {
         functionName: `${stack.stackName}-taskListFunction`,
         handler: "packages/functions/src/tasks/list.handler",
+        bind: [taskTable],
         permissions: ['dynamodb:Scan'],
         memorySize: 2048,
-        bind: [taskTable]
     });
+
+    const taskPermissions = [
+        'states:StopExecution',
+        'ecs:stopTask',
+        'dynamodb:GetItem',
+        'dynamodb:DeleteItem',
+        'dynamodb:UpdateItem',
+        'batch:terminateJob'
+    ];
 
     new Function(stack, "taskAbortFunction", {
         functionName: `${stack.stackName}-taskAbortFunction`,
         handler: "packages/functions/src/tasks/abort.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:UpdateItem', 'ecs:stopTask', 'batch:terminateJob'],
-        memorySize: 2048,
         bind: [taskTable],
+        permissions: taskPermissions,
+        memorySize: 2048,
         environment: {
             CLUSTER_ARN: ecsCluster.clusterArn,
         }
@@ -262,9 +276,9 @@ export function Stack({stack}: StackContext) {
     new Function(stack, "taskDeleteFunction", {
         functionName: `${stack.stackName}-taskDeleteFunction`,
         handler: "packages/functions/src/tasks/delete.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ecs:stopTask', 'batch:terminateJob'],
-        memorySize: 2048,
         bind: [taskTable],
+        permissions: taskPermissions,
+        memorySize: 2048,
         environment: {
             CLUSTER_ARN: ecsCluster.clusterArn,
         }
@@ -273,9 +287,9 @@ export function Stack({stack}: StackContext) {
     new Function(stack, "taskEmptyFunction", {
         functionName: `${stack.stackName}-taskEmptyFunction`,
         handler: "packages/functions/src/tasks/empty.handler",
-        permissions: ['states:StopExecution', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'ecs:stopTask', 'batch:terminateJob'],
-        memorySize: 2048,
         bind: [taskTable],
+        permissions: taskPermissions,
+        memorySize: 2048,
         environment: {
             CLUSTER_ARN: ecsCluster.clusterArn,
         }
@@ -298,7 +312,6 @@ export function Stack({stack}: StackContext) {
         handler: "packages/functions/src/eda/batchJobStateChange.handler",
         bind: [taskTable]
     });
-
 
     new EventBus(stack, "Bus", {
         cdk: {
@@ -343,8 +356,6 @@ export function Stack({stack}: StackContext) {
             },
         },
     });
-
-    stack.tags.setTag("version", version);
 
     stack.addOutputs({
         stack: stackUrl(stack.stackId, stack.region),
