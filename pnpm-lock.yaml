@@ -36,8 +36,8 @@ importers:
         specifier: ^6.3.1
         version: 6.3.1
       sst:
-        specifier: 2.23.6
-        version: 2.23.6
+        specifier: 2.23.14
+        version: 2.23.14
       sst-helper:
         specifier: 0.0.94
         version: 0.0.94(constructs@10.1.156)
@@ -86,8 +86,8 @@ importers:
         specifier: ^20.3.2
         version: 20.3.2
       sst:
-        specifier: 2.23.6
-        version: 2.23.6
+        specifier: 2.23.14
+        version: 2.23.14
       vitest:
         specifier: ^0.32.2
         version: 0.32.2
@@ -234,6 +234,14 @@ packages:
       '@aws-sdk/types': 3.370.0
       tslib: 1.14.1
 
+  /@aws-crypto/sha256-js@5.0.0:
+    resolution: {integrity: sha512-g+u9iKkaQVp9Mjoxq1IJSHj9NHGZF441+R/GIH0dn7u4mix5QQ4VqgpppHrNm1LzjUzb0BpcFGsBXP6cOVf+ZQ==}
+    engines: {node: '>=16.0.0'}
+    dependencies:
+      '@aws-crypto/util': 5.0.0
+      '@aws-sdk/types': 3.378.0
+      tslib: 1.14.1
+
   /@aws-crypto/supports-web-crypto@3.0.0:
     resolution: {integrity: sha512-06hBdMwUAb2WFTuGG73LSC0wfPu93xWwo5vL2et9eymgmu3Id5vFAHBbajVWiGhPO37qcsdCap/FqXvJGJWPIg==}
     dependencies:
@@ -243,6 +251,13 @@ packages:
     resolution: {integrity: sha512-2OJlpeJpCR48CC8r+uKVChzs9Iungj9wkZrl8Z041DWEWvyIHILYKCPNzJghKsivj+S3mLo6BVc7mBNzdxA46w==}
     dependencies:
       '@aws-sdk/types': 3.370.0
+      '@aws-sdk/util-utf8-browser': 3.259.0
+      tslib: 1.14.1
+
+  /@aws-crypto/util@5.0.0:
+    resolution: {integrity: sha512-1GYqLdYRe96idcCltlqxdJ68OWE6ADT8qGLmVi7PVHKl8AxD2EWSbJSSevPq2eTx6vaPZpkr1RoZ3lcw/uGoEA==}
+    dependencies:
+      '@aws-sdk/types': 3.378.0
       '@aws-sdk/util-utf8-browser': 3.259.0
       tslib: 1.14.1
 
@@ -5873,8 +5888,8 @@ packages:
       - debug
     dev: false
 
-  /sst@2.23.6:
-    resolution: {integrity: sha512-0LXHA3GSwGfhMiTAIAkEPe1raNkZrorzwVexGh3lTGJwceIVTh+sTQKQRIOcsdnMcS+r2DQod23viXWF/M2zPA==}
+  /sst@2.23.14:
+    resolution: {integrity: sha512-Nrx8xclLN7sR2fxcQQ9j44rRkxKFfuBqYfcML6Ez9OCBmKCzQidjHBkA4RsQBclzyR3hrZrL9RTob8BR46WO+Q==}
     hasBin: true
     peerDependencies:
       '@sls-next/lambda-at-edge': ^3.7.0
@@ -5888,6 +5903,7 @@ packages:
       '@aws-cdk/cloud-assembly-schema': 2.84.0
       '@aws-cdk/cloudformation-diff': 2.84.0
       '@aws-cdk/cx-api': 2.84.0(@aws-cdk/cloud-assembly-schema@2.84.0)
+      '@aws-crypto/sha256-js': 5.0.0
       '@aws-sdk/client-cloudformation': 3.385.0
       '@aws-sdk/client-ecs': 3.385.0
       '@aws-sdk/client-eventbridge': 3.385.0(@aws-sdk/signature-v4-crt@3.378.0)
@@ -5908,6 +5924,7 @@ packages:
       '@babel/core': 7.22.9
       '@babel/generator': 7.22.9
       '@babel/plugin-syntax-typescript': 7.22.5(@babel/core@7.22.9)
+      '@smithy/signature-v4': 2.0.1
       '@trpc/server': 9.16.0
       adm-zip: 0.5.10
       aws-cdk-lib: 2.84.0(constructs@10.1.156)

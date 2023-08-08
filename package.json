@@ -1,7 +1,7 @@
 {
   "name": "sfb",
   "description": "Serverless Force Bench",
-  "version": "0.0.48",
+  "version": "0.0.49",
   "type": "module",
   "license": "Apache-2.0",
   "bin": {
@@ -36,7 +36,7 @@
     "commander": "^11.0.0",
     "constructs": "10.1.156",
     "ora": "^6.3.1",
-    "sst": "2.23.6",
+    "sst": "2.23.14",
     "sst-helper": "0.0.94",
     "strip-ansi": "^7.1.0",
     "ts-node": "^10.9.1",
