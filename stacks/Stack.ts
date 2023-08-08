@@ -136,7 +136,7 @@ export function Stack({stack}: StackContext) {
 
     const taskFunction = new Function(stack, "taskFunction", {
         functionName: `${stack.stackName}-taskFunction`,
-        handler: "resources/golang/main.go",
+        handler: "resources/job/main.go",
         runtime: "go1.x",
         architecture: "x86_64",
     });
