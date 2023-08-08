@@ -50,5 +50,3 @@ export async function batchGet(table: string, Key: object, regions: string[]) {
 
     return [];
 }
-
-

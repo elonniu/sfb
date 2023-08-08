@@ -7,18 +7,18 @@
     "typecheck": "tsc -noEmit"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.119",
-    "@types/node": "^20.3.2",
     "sst": "2.23.14",
-    "vitest": "^0.32.2"
+    "vitest": "^0.32.2",
+    "@types/node": "^20.3.2",
+    "@types/aws-lambda": "^8.10.119"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudformation": "^3.370.0",
+    "axios": "^1.4.0",
+    "nanoid": "^4.0.2",
+    "aws-sdk": "^2.1408.0",
     "@aws-sdk/client-ec2": "^3.370.0",
     "@aws-sdk/client-sts": "^3.385.0",
-    "@aws-sdk/credential-provider-ini": "^3.385.0",
-    "aws-sdk": "^2.1408.0",
-    "axios": "^1.4.0",
-    "nanoid": "^4.0.2"
+    "@aws-sdk/client-cloudformation": "^3.370.0",
+    "@aws-sdk/credential-provider-ini": "^3.385.0"
   }
 }
