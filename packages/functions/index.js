@@ -322,7 +322,8 @@ function table(data, columnOrder = []) {
         : Object.keys(data[0]).map(key => chalk.green(key));
 
     const table = new Table({
-        head
+        head,
+        wordWrap: true,
     });
 
     data.forEach(item => {
@@ -366,13 +367,14 @@ function show(data) {
 
     const table = new Table({
         head: [chalk.yellow('Key1'), chalk.green('Value1'), chalk.yellow('Key2'), chalk.green('Value2')],
-        colWidths,
+        wordWrap: true,
     });
 
     data.forEach(item => {
         const current = JSON.parse(JSON.stringify(item));
         delete current.states;
         delete current.region;
+        delete current.cluster;
         current.regions = current.regions.join(',');
         const entries = Object.entries(current);
         for (let i = 0; i < entries.length; i += 2) {
@@ -418,6 +420,7 @@ function showTask(res) {
     });
 
     table(list, ["status", "jobUrl"]);
+
     console.log(
         "Refresh Task Status: "
         + chalk.yellow(`sfb ls ${res.taskId}${regionParam()}${stageParam()}${profileParam()}`)
