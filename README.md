@@ -2,7 +2,7 @@
 
 SFB(Serverless Force Bench) is a tool for bench testing on AWS Serverless.
 
-![sfb.svg](sfb.svg)
+![arch.svg](arch.svg)
 
 ## 1. How to use it?
 
